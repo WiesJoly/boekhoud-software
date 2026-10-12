@@ -26,7 +26,7 @@ export async function createInvoice(draft: InvoiceDraft, practiceName: string, a
     const snap = await tx.get(counterRef)
     const counter = snap.exists() ? (snap.data() as InvoiceCounter) : null
     const { number, counter: next } = allocateInvoiceNumber(counter, Number(draft.date.slice(0, 4)))
-    const invoice: Invoice = { ...draft, id: invoiceRef.id, number, paymentReference: paymentReference(practiceName, number) }
+    const invoice: Invoice = { ...draft, id: invoiceRef.id, number, paymentReference: paymentReference(number) }
     const { id: _id, ...data } = invoice
     tx.set(counterRef, next)
     tx.set(invoiceRef, data)
