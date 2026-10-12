@@ -59,3 +59,19 @@ describe('dueReminders', () => {
 test('fillReminder fills number and date', () => {
   expect(fillReminder(1, inv())).toContain('de factuur 2026-0001 van 1 januari 2026 staat nog open')
 })
+
+describe('allocatePayment', () => {
+  test('pays invoices in order up to what is outstanding', async () => {
+    const { allocatePayment } = await import('../../src/domain/invoices')
+    const a = inv({ id: 'a', totalCents: 7500 })
+    const b = inv({ id: 'b', totalCents: 7500, paidCents: 2500 })
+    expect(allocatePayment([a, b], [], 10000)).toEqual([
+      { id: 'a', paidCents: 7500, status: 'paid' },
+      { id: 'b', paidCents: 5000, status: 'open' },
+    ])
+  })
+  test('overpayment stays on the last invoice', async () => {
+    const { allocatePayment } = await import('../../src/domain/invoices')
+    expect(allocatePayment([inv({ id: 'a', totalCents: 7500 })], [], 8000)).toEqual([{ id: 'a', paidCents: 8000, status: 'paid' }])
+  })
+})

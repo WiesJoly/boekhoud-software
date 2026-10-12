@@ -55,3 +55,15 @@ export function formatDate(date: string): string {
 export function fillReminder(level: 1 | 2, invoice: Invoice): string {
   return REMINDER_TEXT[level].replace('{nummer}', invoice.number).replace('{datum}', formatDate(invoice.date))
 }
+
+/** Spreads an incoming amount over invoices in the given order; any surplus stays on the last one. */
+export function allocatePayment(invoices: Invoice[], credits: Invoice[], amountCents: number): { id: string; paidCents: number; status: Invoice['status'] }[] {
+  let remaining = amountCents
+  return invoices.map((invoice, i) => {
+    const open = outstandingCents(invoice, credits)
+    const pay = i === invoices.length - 1 ? remaining : Math.min(open, remaining)
+    remaining -= pay
+    const paidCents = invoice.paidCents + pay
+    return { id: invoice.id, paidCents, status: pay >= open ? 'paid' : 'open' }
+  })
+}

@@ -58,7 +58,7 @@ const WARNING_TEXT: Record<VatWarning, string> = {
   PEPPOL_REQUIRED: 'Belaste factuur aan een onderneming: sinds 2026 moet die als e-factuur via Peppol verstuurd worden. Verstuur ze via je Peppol-dienst of boekhoudpakket; een pdf volstaat niet.',
 }
 const blocking = computed(() => warnings.value.includes('MISSING_VAT_CODE'))
-const canSave = computed(() => !!debtor.value && form.lines.length > 0 && !blocking.value && !busy.value && !!practice.settings)
+const canSave = computed(() => !!debtor.value && form.lines.length > 0 && totals.value.totalCents > 0 && !blocking.value && !busy.value && !!practice.settings)
 
 async function save() {
   if (!canSave.value) return
