@@ -19,7 +19,7 @@ export const invoicesRepo = {
 }
 
 /** Allocates the next gap-free number and stores the invoice in one transaction. */
-export async function createInvoice(draft: InvoiceDraft, afterCreate?: (tx: { update: (path: string, data: DocumentData) => void }) => void): Promise<Invoice> {
+export async function createInvoice(draft: InvoiceDraft, afterCreate?: (tx: { update: (path: string, data: DocumentData) => void }, invoiceId: string) => void): Promise<Invoice> {
   const counterRef = doc(db, practicePath(), 'counters', 'invoice')
   const invoiceRef = doc(invoicesCol())
   return runTransaction(db, async (tx) => {
@@ -30,7 +30,7 @@ export async function createInvoice(draft: InvoiceDraft, afterCreate?: (tx: { up
     const { id: _id, ...data } = invoice
     tx.set(counterRef, next)
     tx.set(invoiceRef, data)
-    afterCreate?.({ update: (path, d) => tx.update(doc(db, practicePath(), path), d) })
+    afterCreate?.({ update: (path, d) => tx.update(doc(db, practicePath(), path), d) }, invoiceRef.id)
     return invoice
   })
 }

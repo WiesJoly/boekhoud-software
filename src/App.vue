@@ -11,16 +11,16 @@ const router = useRouter()
 const authStore = useAuthStore()
 const practice = usePracticeStore()
 
+// The router guard starts the practice store on first navigation; this only handles later log-in/log-out.
 watch(
   () => authStore.user?.uid,
-  (uid) => {
+  (uid, previous) => {
     if (uid) practice.start(uid)
-    else {
+    else if (previous) {
       practice.stop()
-      if (!route.meta.public) router.replace({ name: 'login' })
+      router.replace({ name: 'login' })
     }
   },
-  { immediate: true },
 )
 
 async function logout() {
