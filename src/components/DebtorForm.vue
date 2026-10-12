@@ -11,14 +11,15 @@ const form = reactive<Omit<Debtor, 'id'>>({
   invoiceName: props.debtor?.invoiceName ?? '',
   address: props.debtor?.address ?? '',
   email: props.debtor?.email ?? '',
+  vatNumber: props.debtor?.vatNumber ?? '',
   remindersEnabled: props.debtor?.remindersEnabled ?? true,
 })
 
 const TYPES: { value: DebtorType; label: string }[] = [
   { value: 'client', label: 'Cliënt' },
   { value: 'organisation', label: 'Organisatie' },
-  { value: 'insurer', label: 'Zorgverzekeraar' },
-  { value: 'municipality', label: 'Gemeente' },
+  { value: 'mutuality', label: 'Ziekenfonds' },
+  { value: 'network', label: 'Netwerk of overheid' },
 ]
 
 function save() {
@@ -60,6 +61,11 @@ function save() {
     <div>
       <label class="label" for="deb-email">E-mail</label>
       <input id="deb-email" v-model="form.email" class="field" type="email" />
+    </div>
+    <div v-if="form.type === 'organisation'">
+      <label class="label" for="deb-vat">Btw-nummer</label>
+      <input id="deb-vat" v-model="form.vatNumber" class="field" placeholder="BE0123.456.789" />
+      <p class="mt-1 text-sm text-ink-soft">Nodig voor e-facturen via Peppol aan ondernemingen.</p>
     </div>
     <label v-if="form.type === 'client'" class="flex items-center gap-2 text-sm">
       <input v-model="form.remindersEnabled" type="checkbox" /> Herinneringen tonen na 14 en 28 dagen

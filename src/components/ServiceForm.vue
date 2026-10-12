@@ -12,8 +12,8 @@ const form = reactive({
   code: props.service?.code ?? '',
   rateCents: props.service?.rateCents ?? 0,
   vatCode: (props.service?.vatCode ?? '') as VatCode | '',
-  hasNzaMax: props.service?.nzaMaxCents !== undefined,
-  nzaMaxCents: props.service?.nzaMaxCents ?? 0,
+  hasMaxRate: props.service?.maxRateCents !== undefined,
+  maxRateCents: props.service?.maxRateCents ?? 0,
   revenueAccount: props.service?.revenueAccount ?? 'omzet-zelfbetalers',
   isCare: props.service?.isCare ?? true,
 })
@@ -31,7 +31,7 @@ function save() {
     revenueAccount: form.revenueAccount,
     isCare: form.isCare,
   }
-  if (form.hasNzaMax) data.nzaMaxCents = form.nzaMaxCents
+  if (form.hasMaxRate) data.maxRateCents = form.maxRateCents
   emit('save', data)
 }
 </script>
@@ -44,7 +44,7 @@ function save() {
     </div>
     <div class="grid gap-4 sm:grid-cols-2">
       <div>
-        <label class="label" for="svc-code">Prestatiecode (optioneel)</label>
+        <label class="label" for="svc-code">Pseudocode / nomenclatuur (optioneel)</label>
         <input id="svc-code" v-model="form.code" class="field" />
       </div>
       <div>
@@ -56,9 +56,9 @@ function save() {
     <fieldset>
       <legend class="label">Btw</legend>
       <div class="space-y-2 text-sm">
-        <label class="flex gap-2"><input v-model="form.vatCode" type="radio" value="exempt" /> <span><b class="font-medium">Vrijgesteld</b> — zorg door een BIG-geregistreerde professional, met een gezondheidsdoel</span></label>
-        <label class="flex gap-2"><input v-model="form.vatCode" type="radio" value="standard21" /> <span><b class="font-medium">21%</b> — coaching, trainingen, rapporten: geen gezondheidsdoel</span></label>
-        <label class="flex gap-2"><input v-model="form.vatCode" type="radio" value="outside" /> <span><b class="font-medium">Buiten btw</b> — subsidies en vergoedingen die geen omzet zijn</span></label>
+        <label class="flex gap-2"><input v-model="form.vatCode" type="radio" value="exempt" /> <span><b class="font-medium">Vrijgesteld (art. 44)</b> — therapeutische zorg door een erkend klinisch psycholoog, orthopedagoog of psychotherapeut</span></label>
+        <label class="flex gap-2"><input v-model="form.vatCode" type="radio" value="standard21" /> <span><b class="font-medium">21%</b> — coaching, arbeidspsychologie, opleidingen, deskundigenverslagen: geen therapeutisch doel</span></label>
+        <label class="flex gap-2"><input v-model="form.vatCode" type="radio" value="outside" /> <span><b class="font-medium">Buiten btw</b> — annuleringsvergoedingen, subsidies en premies</span></label>
       </div>
       <p v-if="form.vatCode === ''" class="mt-2 text-sm text-ochre">Kies een btw-code. Zonder btw-code kan de dienst niet op een factuur.</p>
     </fieldset>
@@ -74,9 +74,9 @@ function save() {
     </div>
 
     <div>
-      <label class="flex items-center gap-2 text-sm"><input v-model="form.hasNzaMax" type="checkbox" /> Er geldt een NZa-maximumtarief</label>
-      <div v-if="form.hasNzaMax" class="mt-2 max-w-48">
-        <MoneyInput id="svc-nza" v-model="form.nzaMaxCents" />
+      <label class="flex items-center gap-2 text-sm"><input v-model="form.hasMaxRate" type="checkbox" /> Er geldt een conventietarief of maximumhonorarium</label>
+      <div v-if="form.hasMaxRate" class="mt-2 max-w-48">
+        <MoneyInput id="svc-max" v-model="form.maxRateCents" />
       </div>
     </div>
 

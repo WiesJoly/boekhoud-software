@@ -1,3 +1,3 @@
 <template>
-  <h1>Consulten</h1>
+  <h1>Sessies</h1>
 </template>

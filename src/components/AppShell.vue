@@ -6,7 +6,7 @@ defineEmits<{ logout: [] }>()
 
 const nav = [
   { to: { name: 'overview' }, label: 'Overzicht' },
-  { to: { name: 'consults' }, label: 'Consulten' },
+  { to: { name: 'consults' }, label: 'Sessies' },
   { to: { name: 'invoices' }, label: 'Facturen' },
   { to: { name: 'expenses' }, label: 'Uitgaven' },
   { to: { name: 'bank' }, label: 'Bank' },

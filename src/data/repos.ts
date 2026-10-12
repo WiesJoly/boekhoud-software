@@ -1,5 +1,5 @@
 import { doc, onSnapshot, setDoc, type Unsubscribe } from 'firebase/firestore'
-import type { BankTransaction, Consult, Debtor, Expense, HoursEntry, Mileage, Service, Settings } from '../domain/types'
+import type { BankTransaction, Consult, Debtor, Expense, Mileage, Service, Settings } from '../domain/types'
 import { db } from '../firebase'
 import { collectionRepo, practicePath } from './repo'
 
@@ -9,7 +9,6 @@ export const consultsRepo = collectionRepo<Consult>('consults')
 export const expensesRepo = collectionRepo<Expense>('expenses')
 export const transactionsRepo = collectionRepo<BankTransaction>('bankTransactions')
 export const mileageRepo = collectionRepo<Mileage>('mileage')
-export const hoursRepo = collectionRepo<HoursEntry>('hours')
 export const supplierRulesRepo = collectionRepo<{ id: string; category: string }>('supplierRules')
 
 const settingsDoc = () => doc(db, practicePath(), 'settings', 'main')

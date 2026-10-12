@@ -17,7 +17,7 @@ import { today, usePracticeStore } from '../stores/practice'
 const practice = usePracticeStore()
 
 const blank = (): Settings => ({
-  name: '', address: '', kvk: '', agbPractice: '', agbProvider: '', big: '', vatNumber: '', iban: '',
+  name: '', address: '', enterpriseNumber: '', vatNumber: '', rizivNumber: '', visumNumber: '', iban: '',
   vatProfile: 'exempt', openingBalanceCents: 0, openingBalanceDate: `${today().slice(0, 4)}-01-01`,
 })
 const form = reactive<Settings>({ ...blank(), ...practice.settings })
@@ -56,7 +56,7 @@ function saveDebtor(data: Omit<Debtor, 'id'>) {
     'Debiteur opgeslagen',
   )
 }
-const DEBTOR_TYPE: Record<Debtor['type'], string> = { client: 'Cliënt', organisation: 'Organisatie', insurer: 'Zorgverzekeraar', municipality: 'Gemeente' }
+const DEBTOR_TYPE: Record<Debtor['type'], string> = { client: 'Cliënt', organisation: 'Organisatie', mutuality: 'Ziekenfonds', network: 'Netwerk of overheid' }
 </script>
 
 <template>
@@ -73,27 +73,30 @@ const DEBTOR_TYPE: Record<Debtor['type'], string> = { client: 'Cliënt', organis
         <label class="label" for="s-address">Adres</label>
         <textarea id="s-address" v-model="form.address" class="field" rows="2" />
       </div>
-      <div><label class="label" for="s-kvk">KvK-nummer</label><input id="s-kvk" v-model="form.kvk" class="field" /></div>
-      <div><label class="label" for="s-iban">IBAN</label><input id="s-iban" v-model="form.iban" class="field" /></div>
-      <div><label class="label" for="s-agbp">AGB-code praktijk</label><input id="s-agbp" v-model="form.agbPractice" class="field" /></div>
-      <div><label class="label" for="s-agbz">AGB-code behandelaar</label><input id="s-agbz" v-model="form.agbProvider" class="field" /></div>
-      <div><label class="label" for="s-big">BIG-nummer</label><input id="s-big" v-model="form.big" class="field" /></div>
-      <div><label class="label" for="s-vat">Btw-nummer</label><input id="s-vat" v-model="form.vatNumber" class="field" /></div>
+      <div><label class="label" for="s-kbo">Ondernemingsnummer (KBO)</label><input id="s-kbo" v-model="form.enterpriseNumber" class="field" placeholder="0123.456.789" /></div>
+      <div><label class="label" for="s-vat">Btw-nummer</label><input id="s-vat" v-model="form.vatNumber" class="field" placeholder="BE0123.456.789" /></div>
+      <div><label class="label" for="s-riziv">RIZIV-nummer</label><input id="s-riziv" v-model="form.rizivNumber" class="field" /></div>
+      <div><label class="label" for="s-visum">Visumnummer (FOD Volksgezondheid)</label><input id="s-visum" v-model="form.visumNumber" class="field" /></div>
+      <div class="md:col-span-2"><label class="label" for="s-iban">IBAN</label><input id="s-iban" v-model="form.iban" class="field" placeholder="BE68 5390 0754 7034" /></div>
 
       <fieldset class="md:col-span-2">
         <legend class="label">Welke diensten lever je?</legend>
-        <div class="grid gap-2 text-sm md:grid-cols-3">
+        <div class="grid gap-2 text-sm md:grid-cols-2 xl:grid-cols-4">
           <label class="flex gap-2 rounded-md border border-line p-3 has-checked:border-sage has-checked:bg-sage-light/40">
             <input v-model="form.vatProfile" type="radio" value="exempt" />
-            <span><b class="block font-medium">Alleen zorg</b>Geen btw-aangifte nodig. Btw op inkopen hoort bij de kosten.</span>
+            <span><b class="block font-medium">Alleen zorg (art. 44)</b>Vrijgestelde btw-plichtige: geen periodieke btw-aangifte. Btw op aankopen is een kost.</span>
           </label>
           <label class="flex gap-2 rounded-md border border-line p-3 has-checked:border-sage has-checked:bg-sage-light/40">
             <input v-model="form.vatProfile" type="radio" value="mixed" />
-            <span><b class="block font-medium">Zorg en andere diensten</b>Btw-aangifte over coaching, trainingen of rapporten. Inkoop-btw deels aftrekbaar.</span>
+            <span><b class="block font-medium">Zorg en belaste diensten</b>Gemengde btw-plichtige: kwartaalaangifte over coaching, opleidingen of verslagen. Btw op aankopen deels aftrekbaar.</span>
           </label>
           <label class="flex gap-2 rounded-md border border-line p-3 has-checked:border-sage has-checked:bg-sage-light/40">
             <input v-model="form.vatProfile" type="radio" value="taxed" />
-            <span><b class="block font-medium">Alleen belaste diensten</b>Bijvoorbeeld coaching zonder BIG-registratie. 21% btw, volledige aftrek.</span>
+            <span><b class="block font-medium">Alleen belaste diensten</b>Bijvoorbeeld coaching of arbeidspsychologie. 21% btw, volledige aftrek.</span>
+          </label>
+          <label class="flex gap-2 rounded-md border border-line p-3 has-checked:border-sage has-checked:bg-sage-light/40">
+            <input v-model="form.vatProfile" type="radio" value="small" />
+            <span><b class="block font-medium">Kleine onderneming</b>Belaste omzet onder € 25.000: vrijstellingsregeling, geen btw aanrekenen en geen aftrek.</span>
           </label>
         </div>
       </fieldset>
@@ -146,7 +149,7 @@ const DEBTOR_TYPE: Record<Debtor['type'], string> = { client: 'Cliënt', organis
       <h2>Debiteuren</h2>
       <button class="btn-secondary" :disabled="!practice.settings" @click="editingDebtor = 'new'">Debiteur toevoegen</button>
     </div>
-    <EmptyState v-if="!practice.debtors.length">Nog geen debiteuren. Verzekeraars worden automatisch aangemaakt bij het importeren van declaraties.</EmptyState>
+    <EmptyState v-if="!practice.debtors.length">Nog geen debiteuren. Ziekenfondsen worden automatisch aangemaakt bij het importeren van sessies.</EmptyState>
     <div v-else class="overflow-x-auto">
       <table class="table">
         <thead><tr><th>Naam / nummer</th><th>Soort</th><th>Herinneringen</th><th /></tr></thead>
