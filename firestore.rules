@@ -5,18 +5,39 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == uid;
     }
 
+    // A new invoice must take exactly the next number of its year's counter, written in the same batch.
+    function takesNextNumber(uid) {
+      let number = request.resource.data.number;
+      let parts = number.split('-');
+      let path = /databases/$(database)/documents/practices/$(uid)/counters/$('invoice-' + parts[0]);
+      let before = exists(path) ? get(path).data.next : 1;
+      return number is string && parts.size() == 2
+        && int(parts[1]) == before
+        && getAfter(path).data.next == before + 1;
+    }
+
     match /practices/{uid} {
       allow read, write: if isOwner(uid);
 
-      // Invoices are never deleted (credit invoices instead) and keep their number.
+      // Issued invoices are never deleted (creditnota instead) and only their payment state may change.
       match /invoices/{invoiceId} {
-        allow read, create: if isOwner(uid);
-        allow update: if isOwner(uid) && request.resource.data.number == resource.data.number;
+        allow read: if isOwner(uid);
+        allow create: if isOwner(uid) && takesNextNumber(uid);
+        allow update: if isOwner(uid)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['paidCents', 'status', 'reminders']);
+        allow delete: if false;
+      }
+
+      // Gap-free numbering: a year's counter starts at 2 (after invoice 0001) and only ever moves up by one.
+      match /counters/{counterId} {
+        allow read: if isOwner(uid);
+        allow create: if isOwner(uid) && request.resource.data.next == 2;
+        allow update: if isOwner(uid) && request.resource.data.next == resource.data.next + 1;
         allow delete: if false;
       }
 
       match /{collection}/{docId} {
-        allow read, write: if isOwner(uid) && collection != 'invoices';
+        allow read, write: if isOwner(uid) && !(collection in ['invoices', 'counters']);
       }
     }
 

@@ -20,15 +20,17 @@ describe('vatReturn', () => {
   })
   test('Q1 roosters', () => {
     expect(vatReturn(2026, 1, invoices, [exp('2026-01-15', 500), exp('2026-04-15', 999)])).toEqual({
-      grid00Cents: 9500, grid03Cents: 10000, grid54Cents: 2100, grid59Cents: 500, grid71Cents: 1600, grid72Cents: 0,
+      grid00Cents: 9500, grid03Cents: 10000, grid48Cents: 0, grid54Cents: 2100, grid59Cents: 500, grid64Cents: 0, grid71Cents: 1600, grid72Cents: 0,
     })
   })
   test('more deductible than due gives rooster 72', () => {
     expect(vatReturn(2026, 1, [], [exp('2026-01-15', 500)])).toMatchObject({ grid71Cents: 0, grid72Cents: 500 })
   })
-  test('credit note in the quarter reduces 03 and 54', () => {
-    const credit = inv('cr', '2026-03-01', [{ ...line(10000, 'standard21'), qty: -1 }], 'credit')
-    expect(vatReturn(2026, 1, [...invoices, credit], [])).toMatchObject({ grid03Cents: 0, grid54Cents: 0 })
+  test('issued credit notes go to roosters 48 (base) and 64 (VAT), not into 03/54', () => {
+    const credit = inv('cr', '2026-03-01', [{ ...line(10000, 'standard21'), qty: -1 }, { ...line(9500, 'exempt'), qty: -1 }], 'credit')
+    expect(vatReturn(2026, 1, [...invoices, credit], [])).toMatchObject({
+      grid00Cents: 9500, grid03Cents: 10000, grid48Cents: 19500, grid54Cents: 2100, grid64Cents: 2100, grid71Cents: 0, grid72Cents: 0,
+    })
   })
 })
 

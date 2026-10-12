@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
 import { createInvoice } from '../data/invoices'
+import { chronologyProblem } from '../domain/invoiceNumber'
 import { addDays, invoiceTotals } from '../domain/invoices'
 import type { Invoice, InvoiceLine } from '../domain/types'
 import { effectiveVatCode, invoiceWarnings, type VatWarning } from '../domain/vat'
@@ -57,7 +58,8 @@ const WARNING_TEXT: Record<VatWarning, string> = {
   ABOVE_MAX_RATE: 'Het tarief ligt boven het conventietarief van deze dienst.',
   PEPPOL_REQUIRED: 'Belaste factuur aan een onderneming: sinds 2026 moet die als e-factuur via Peppol verstuurd worden. Verstuur ze via je Peppol-dienst of boekhoudpakket; een pdf volstaat niet.',
 }
-const blocking = computed(() => warnings.value.includes('MISSING_VAT_CODE'))
+const dateProblem = computed(() => chronologyProblem(form.date, practice.invoices, today()))
+const blocking = computed(() => warnings.value.includes('MISSING_VAT_CODE') || !!dateProblem.value)
 const canSave = computed(() => !!debtor.value && form.lines.length > 0 && totals.value.totalCents > 0 && !blocking.value && !busy.value && !!practice.settings)
 
 async function save() {
@@ -141,6 +143,7 @@ async function save() {
       <dt class="font-medium">Totaal</dt><dd class="text-right font-medium"><AmountText :cents="totals.totalCents" /></dd>
     </dl>
 
+    <p v-if="dateProblem" class="rounded-md bg-brick-light px-3 py-2 text-sm text-brick">{{ dateProblem }}</p>
     <ul v-if="warnings.length" class="space-y-2">
       <li
         v-for="w in warnings"

@@ -14,31 +14,40 @@ const inQuarter = (date: string, year: number, quarter: Quarter) => {
   return q.year === year && q.quarter === quarter
 }
 
-/** Periodieke btw-aangifte (roosters). Rooster 00 = vrijgestelde handelingen (art. 44) van een gemengde btw-plichtige. */
+/**
+ * Periodieke btw-aangifte (roosters). 00 = vrijgestelde handelingen (art. 44) van een gemengde btw-plichtige,
+ * 03 = maatstaf 21%, 54 = verschuldigde btw, 59 = aftrekbare btw,
+ * 48 = uitgereikte creditnota's (maatstaf), 64 = btw op uitgereikte creditnota's.
+ */
 export interface VatReturn {
   grid00Cents: number
   grid03Cents: number
+  grid48Cents: number
   grid54Cents: number
   grid59Cents: number
+  grid64Cents: number
   grid71Cents: number
   grid72Cents: number
 }
 
 export function vatReturn(year: number, quarter: Quarter, invoices: Invoice[], expenses: Expense[]): VatReturn {
-  let grid00 = 0
-  let grid03 = 0
-  let grid54 = 0
+  const g = { g00: 0, g03: 0, g48: 0, g54: 0, g64: 0 }
   for (const invoice of invoices.filter((i) => inQuarter(i.date, year, quarter))) {
     for (const line of invoice.lines) {
       const net = Math.round(line.qty * line.unitCents)
-      if (line.vatCode === 'standard21') { grid03 += net; grid54 += lineVat(net, 'standard21') }
-      else if (line.vatCode === 'exempt') grid00 += net
+      const vat = lineVat(net, line.vatCode)
+      if (invoice.kind === 'credit') {
+        if (line.vatCode === 'standard21' || line.vatCode === 'exempt') { g.g48 += -net; g.g64 += -vat }
+      } else if (line.vatCode === 'standard21') { g.g03 += net; g.g54 += vat }
+      else if (line.vatCode === 'exempt') g.g00 += net
     }
   }
-  const grid59 = expenses.filter((e) => inQuarter(e.date, year, quarter)).reduce((s, e) => s + e.deductibleVatCents, 0)
+  const g59 = expenses.filter((e) => inQuarter(e.date, year, quarter)).reduce((s, e) => s + e.deductibleVatCents, 0)
+  const due = g.g54
+  const deductible = g59 + g.g64
   return {
-    grid00Cents: grid00, grid03Cents: grid03, grid54Cents: grid54, grid59Cents: grid59,
-    grid71Cents: Math.max(0, grid54 - grid59), grid72Cents: Math.max(0, grid59 - grid54),
+    grid00Cents: g.g00, grid03Cents: g.g03, grid48Cents: g.g48, grid54Cents: g.g54, grid59Cents: g59, grid64Cents: g.g64,
+    grid71Cents: Math.max(0, due - deductible), grid72Cents: Math.max(0, deductible - due),
   }
 }
 

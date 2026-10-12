@@ -66,7 +66,7 @@ const sum = (lines: { cents: number }[]) => lines.reduce((s, l) => s + l.cents, 
   <section class="mb-10">
     <h2 class="mb-3">Btw</h2>
     <template v-if="files">
-      <p class="mb-3 text-sm text-ink-soft">Kwartaalaangifte. Rooster 00: vrijgestelde handelingen (art. 44), 03: maatstaf 21%, 54: verschuldigde btw, 59: aftrekbare btw.</p>
+      <p class="mb-3 text-sm text-ink-soft">Kwartaalaangifte. Rooster 00: vrijgestelde handelingen (art. 44), 03: maatstaf 21%, 54: verschuldigde btw, 59: aftrekbare btw, 48/64: uitgereikte creditnota's.</p>
       <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <div v-for="{ q, r } in quarters" :key="q" class="panel">
           <h3 class="mb-2 font-medium">Kwartaal {{ q }}</h3>
@@ -75,6 +75,8 @@ const sum = (lines: { cents: number }[]) => lines.reduce((s, l) => s + l.cents, 
             <dt class="text-ink-soft">03</dt><dd class="text-right"><AmountText :cents="r.grid03Cents" /></dd>
             <dt class="text-ink-soft">54</dt><dd class="text-right"><AmountText :cents="r.grid54Cents" /></dd>
             <dt class="text-ink-soft">59</dt><dd class="text-right"><AmountText :cents="r.grid59Cents" /></dd>
+            <template v-if="r.grid48Cents"><dt class="text-ink-soft">48</dt><dd class="text-right"><AmountText :cents="r.grid48Cents" /></dd></template>
+            <template v-if="r.grid64Cents"><dt class="text-ink-soft">64</dt><dd class="text-right"><AmountText :cents="r.grid64Cents" /></dd></template>
             <template v-if="r.grid72Cents"><dt class="font-medium">72 terug</dt><dd class="text-right font-medium"><AmountText :cents="r.grid72Cents" /></dd></template>
             <template v-else><dt class="font-medium">71 te betalen</dt><dd class="text-right font-medium"><AmountText :cents="r.grid71Cents" /></dd></template>
           </dl>

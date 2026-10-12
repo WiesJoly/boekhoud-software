@@ -60,3 +60,8 @@ describe('mergeConsult', () => {
     expect(Object.values(mergeConsult(undefined, parseDeclarationFile(text).rows[2], 'd2'))).not.toContain(undefined)
   })
 })
+
+test('paid session with an empty betaald column counts the full amount', () => {
+  const r = parseDeclarationFile(`${HEADER}\nS-1;2026-01-05;CM;7980;78,59;betaald;;`).rows[0]
+  expect(r).toMatchObject({ status: 'paid', paidCents: 7859 })
+})

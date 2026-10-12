@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { assertFails, assertSucceeds, initializeTestEnvironment, type RulesTestEnvironment } from '@firebase/rules-unit-testing'
-import { deleteDoc, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore'
+import { deleteDoc, doc, getDoc, setDoc, updateDoc, writeBatch } from 'firebase/firestore'
 import { ref, uploadBytes } from 'firebase/storage'
 import { afterAll, beforeAll, beforeEach, describe, test } from 'vitest'
 
@@ -17,7 +17,8 @@ afterAll(() => env.cleanup())
 beforeEach(async () => {
   await env.clearFirestore()
   await env.withSecurityRulesDisabled(async (ctx) => {
-    await setDoc(doc(ctx.firestore(), 'practices/alice/invoices/i1'), { number: '2026-0001', status: 'open' })
+    await setDoc(doc(ctx.firestore(), 'practices/alice/invoices/i1'), { number: '2026-0001', status: 'open', totalCents: 7500, paidCents: 0, reminders: [], lines: [] })
+    await setDoc(doc(ctx.firestore(), 'practices/alice/counters/invoice-2026'), { next: 2 })
     await setDoc(doc(ctx.firestore(), 'fiscalParameters/2026'), { year: 2026 })
   })
 })
@@ -47,8 +48,30 @@ describe('invoices', () => {
   test('number cannot change', async () => {
     await assertFails(updateDoc(doc(alice(), 'practices/alice/invoices/i1'), { number: '2026-0099' }))
   })
-  test('other fields can change', async () => {
-    await assertSucceeds(updateDoc(doc(alice(), 'practices/alice/invoices/i1'), { status: 'paid' }))
+  test('content of an issued invoice cannot change', async () => {
+    await assertFails(updateDoc(doc(alice(), 'practices/alice/invoices/i1'), { totalCents: 1 }))
+    await assertFails(updateDoc(doc(alice(), 'practices/alice/invoices/i1'), { lines: [{ qty: 2 }] }))
+  })
+  test('payment status and reminders can change', async () => {
+    await assertSucceeds(updateDoc(doc(alice(), 'practices/alice/invoices/i1'), { status: 'paid', paidCents: 7500, reminders: [{ level: 1, date: '2026-01-15' }] }))
+  })
+  test('creating needs the next number of that year, together with the counter', async () => {
+    const db = alice()
+    const batch = writeBatch(db)
+    batch.set(doc(db, 'practices/alice/invoices/i2'), { number: '2026-0002', status: 'open' })
+    batch.set(doc(db, 'practices/alice/counters/invoice-2026'), { next: 3 })
+    await assertSucceeds(batch.commit())
+  })
+  test('creating with a number that skips or reuses the counter is refused', async () => {
+    await assertFails(setDoc(doc(alice(), 'practices/alice/invoices/i3'), { number: '2026-0001', status: 'open' }))
+    const db = alice()
+    const batch = writeBatch(db)
+    batch.set(doc(db, 'practices/alice/invoices/i4'), { number: '2026-0005', status: 'open' })
+    batch.set(doc(db, 'practices/alice/counters/invoice-2026'), { next: 3 })
+    await assertFails(batch.commit())
+  })
+  test('counter can only move forward by one', async () => {
+    await assertFails(setDoc(doc(alice(), 'practices/alice/counters/invoice-2026'), { next: 1 }))
   })
 })
 

@@ -1,12 +1,31 @@
-export interface InvoiceCounter {
-  year: number
-  next: number
+/** One counter document per year, so back-dated invoices never reset another year's sequence. */
+export function invoiceCounterId(year: number): string {
+  return `invoice-${year}`
 }
 
-/** Pure part of gap-free numbering; the repository runs this inside a Firestore transaction. */
-export function allocateInvoiceNumber(counter: InvoiceCounter | null, year: number): { number: string; counter: InvoiceCounter } {
-  const seq = counter && counter.year === year ? counter.next : 1
-  return { number: `${year}-${String(seq).padStart(4, '0')}`, counter: { year, next: seq + 1 } }
+/** Pure part of gap-free numbering; the repository runs this inside a Firestore transaction on that year's counter. */
+export function allocateInvoiceNumber(next: number | null, year: number): { number: string; next: number } {
+  const seq = next ?? 1
+  return { number: `${year}-${String(seq).padStart(4, '0')}`, next: seq + 1 }
+}
+
+const longDate = (date: string) =>
+  new Date(`${date}T12:00:00Z`).toLocaleDateString('nl-BE', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
+
+/**
+ * Invoices are numbered chronologically: a new invoice may not be dated before the last one of the same year,
+ * and only the current or previous calendar year can still be invoiced. Returns a Dutch explanation, or null.
+ */
+export function chronologyProblem(date: string, issued: { date: string; kind: 'invoice' | 'credit' }[], today?: string): string | null {
+  const year = date.slice(0, 4)
+  if (today && Number(year) < Number(today.slice(0, 4)) - 1) {
+    return `Je kunt geen factuur meer maken in ${year}. Kies een datum in dit of vorig jaar.`
+  }
+  const last = issued.filter((i) => i.date.startsWith(year)).reduce((max, i) => (i.date > max ? i.date : max), '')
+  if (last && date < last) {
+    return `De factuurdatum ligt vóór je laatste factuur van ${longDate(last)}. Facturen moeten chronologisch genummerd zijn.`
+  }
+  return null
 }
 
 const checkDigits = (base: string) => String(Number(BigInt(base) % 97n) || 97).padStart(2, '0')

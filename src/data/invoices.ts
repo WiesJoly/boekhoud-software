@@ -1,5 +1,5 @@
 import { collection, doc, onSnapshot, runTransaction, updateDoc, type DocumentData, type Unsubscribe } from 'firebase/firestore'
-import { allocateInvoiceNumber, paymentReference, type InvoiceCounter } from '../domain/invoiceNumber'
+import { allocateInvoiceNumber, invoiceCounterId, paymentReference } from '../domain/invoiceNumber'
 import { buildCreditLines, invoiceTotals } from '../domain/invoices'
 import type { Invoice } from '../domain/types'
 import { db } from '../firebase'
@@ -20,15 +20,15 @@ export const invoicesRepo = {
 
 /** Allocates the next gap-free number and stores the invoice in one transaction. */
 export async function createInvoice(draft: InvoiceDraft, afterCreate?: (tx: { update: (path: string, data: DocumentData) => void }, invoiceId: string) => void): Promise<Invoice> {
-  const counterRef = doc(db, practicePath(), 'counters', 'invoice')
+  const year = Number(draft.date.slice(0, 4))
+  const counterRef = doc(db, practicePath(), 'counters', invoiceCounterId(year))
   const invoiceRef = doc(invoicesCol())
   return runTransaction(db, async (tx) => {
     const snap = await tx.get(counterRef)
-    const counter = snap.exists() ? (snap.data() as InvoiceCounter) : null
-    const { number, counter: next } = allocateInvoiceNumber(counter, Number(draft.date.slice(0, 4)))
+    const { number, next } = allocateInvoiceNumber(snap.exists() ? (snap.data() as { next: number }).next : null, year)
     const invoice: Invoice = { ...draft, id: invoiceRef.id, number, paymentReference: paymentReference(number) }
     const { id: _id, ...data } = invoice
-    tx.set(counterRef, next)
+    tx.set(counterRef, { next })
     tx.set(invoiceRef, data)
     afterCreate?.({ update: (path, d) => tx.update(doc(db, practicePath(), path), d) }, invoiceRef.id)
     return invoice

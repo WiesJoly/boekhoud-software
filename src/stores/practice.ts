@@ -1,4 +1,5 @@
 import type { Unsubscribe } from 'firebase/firestore'
+import { localIsoDate } from '../domain/dates'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { loadFiscal } from '../data/fiscal'
@@ -13,7 +14,7 @@ import { proRata } from '../domain/vat'
 import type { BankTransaction, Consult, Debtor, Expense, Invoice, Mileage, Service, Settings } from '../domain/types'
 import { useToastStore } from './toast'
 
-export const today = () => new Date().toISOString().slice(0, 10)
+export const today = () => localIsoDate(new Date())
 
 export const usePracticeStore = defineStore('practice', () => {
   const settings = ref<Settings | null>(null)

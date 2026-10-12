@@ -70,7 +70,8 @@ export function parseDeclarationFile(text: string): ImportResult<ParsedConsult> 
     const status = STATUS[get('status').toLowerCase()]
     const date = normaliseDate(get('datum'))
     const amount = parseAmount(get('bedrag'))
-    const paid = get('betaald') ? parseAmount(get('betaald')) : 0
+    // A paid session without an explicit paid amount was paid in full.
+    const paid = get('betaald') ? parseAmount(get('betaald')) : status === 'paid' ? amount : 0
     const externalId = get('sessie_id')
     if (!externalId) return result.errors.push({ line, message: 'sessie_id ontbreekt' })
     if (!status) return result.errors.push({ line, message: `Onbekende status "${get('status')}"` })

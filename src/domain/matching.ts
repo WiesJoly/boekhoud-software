@@ -1,4 +1,5 @@
 import { extractInvoiceNumbers } from './invoiceNumber'
+import { allocatePayment } from './invoices'
 import type { BankTransaction, Consult, Debtor, Expense, Invoice, MatchType } from './types'
 
 export interface MatchContext {
@@ -50,4 +51,19 @@ export function suggestMatch(tx: BankTransaction, ctx: MatchContext): MatchSugge
     (e) => !linked.has(e.id) && e.amountInclCents === -tx.amountCents && e.supplier && counterparty.includes(e.supplier.toLowerCase()),
   )
   return expense ? { type: 'expense', ids: [expense.id], reason: `Uitgave bij ${expense.supplier}` } : null
+}
+
+export interface ConfirmationPlan {
+  invoiceUpdates: { id: string; paidCents: number; status: Invoice['status'] }[]
+  consultIds: string[]
+}
+
+/** What confirming a bank match changes. Refuses a transaction that is already linked, so retries never pay twice. */
+export function planConfirmation(tx: BankTransaction, match: { type: MatchType; ids: string[] }, invoices: Invoice[], credits: Invoice[] = []): ConfirmationPlan {
+  if (tx.confirmed) throw new Error('Deze transactie is al gekoppeld')
+  if (match.type === 'invoice') {
+    const matched = match.ids.map((id) => invoices.find((i) => i.id === id)).filter((i): i is Invoice => !!i)
+    return { invoiceUpdates: allocatePayment(matched, credits, tx.amountCents), consultIds: [] }
+  }
+  return { invoiceUpdates: [], consultIds: match.type === 'consults' ? match.ids : [] }
 }

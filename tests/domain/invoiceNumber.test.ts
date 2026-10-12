@@ -1,18 +1,34 @@
 import { describe, expect, test } from 'vitest'
-import { allocateInvoiceNumber, extractInvoiceNumbers, paymentReference, structuredCommunication } from '../../src/domain/invoiceNumber'
+import { allocateInvoiceNumber, chronologyProblem, extractInvoiceNumbers, invoiceCounterId, paymentReference, structuredCommunication } from '../../src/domain/invoiceNumber'
 
 describe('allocateInvoiceNumber', () => {
+  test('each year has its own counter document', () => {
+    expect(invoiceCounterId(2026)).toBe('invoice-2026')
+    expect(invoiceCounterId(2027)).toBe('invoice-2027')
+  })
   test('starts at 0001 without a counter', () => {
-    expect(allocateInvoiceNumber(null, 2026)).toEqual({ number: '2026-0001', counter: { year: 2026, next: 2 } })
+    expect(allocateInvoiceNumber(null, 2026)).toEqual({ number: '2026-0001', next: 2 })
   })
-  test('continues within a year', () => {
-    expect(allocateInvoiceNumber({ year: 2026, next: 42 }, 2026).number).toBe('2026-0042')
-  })
-  test('restarts in a new year', () => {
-    expect(allocateInvoiceNumber({ year: 2026, next: 43 }, 2027)).toEqual({ number: '2027-0001', counter: { year: 2027, next: 2 } })
+  test('continues within the year of its own counter', () => {
+    expect(allocateInvoiceNumber(42, 2026)).toEqual({ number: '2026-0042', next: 43 })
   })
   test('does not truncate beyond four digits', () => {
-    expect(allocateInvoiceNumber({ year: 2026, next: 10000 }, 2026).number).toBe('2026-10000')
+    expect(allocateInvoiceNumber(10000, 2026).number).toBe('2026-10000')
+  })
+})
+
+describe('chronologyProblem', () => {
+  const issued = [{ date: '2026-12-20', kind: 'invoice' as const }, { date: '2027-01-03', kind: 'invoice' as const }]
+  test('date before the last invoice of that year is refused', () => {
+    expect(chronologyProblem('2026-12-01', issued)).toContain('20 december 2026')
+  })
+  test('later date in the same year is fine', () => {
+    expect(chronologyProblem('2026-12-30', issued)).toBeNull()
+    expect(chronologyProblem('2027-01-03', issued)).toBeNull()
+  })
+  test('an earlier year is allowed only while it is the previous calendar year', () => {
+    expect(chronologyProblem('2026-12-30', issued, '2027-01-05')).toBeNull()
+    expect(chronologyProblem('2025-12-30', [], '2027-01-05')).toContain('2025')
   })
 })
 

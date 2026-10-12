@@ -46,3 +46,20 @@ describe('suggestMatch', () => {
     expect(suggestMatch(tx({ description: 'iets' }), ctx())).toBeNull()
   })
 })
+
+describe('planConfirmation', () => {
+  test('invoice payment is allocated over the matched invoices', async () => {
+    const { planConfirmation } = await import('../../src/domain/matching')
+    const plan = planConfirmation(tx({ amountCents: 9500 }), { type: 'invoice', ids: ['i1'] }, [invoice({})])
+    expect(plan.invoiceUpdates).toEqual([{ id: 'i1', paidCents: 9500, status: 'paid' }])
+    expect(plan.consultIds).toEqual([])
+  })
+  test('sessions get linked', async () => {
+    const { planConfirmation } = await import('../../src/domain/matching')
+    expect(planConfirmation(tx({}), { type: 'consults', ids: ['c1', 'c2'] }, []).consultIds).toEqual(['c1', 'c2'])
+  })
+  test('an already confirmed transaction is refused, so a retry cannot pay twice', async () => {
+    const { planConfirmation } = await import('../../src/domain/matching')
+    expect(() => planConfirmation(tx({ confirmed: true }), { type: 'invoice', ids: ['i1'] }, [invoice({})])).toThrow('al gekoppeld')
+  })
+})

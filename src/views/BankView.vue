@@ -5,10 +5,10 @@ import AppModal from '../components/AppModal.vue'
 import EmptyState from '../components/EmptyState.vue'
 import ImportPreview from '../components/ImportPreview.vue'
 import PageHeader from '../components/PageHeader.vue'
-import { invoicesRepo } from '../data/invoices'
-import { consultsRepo, transactionsRepo } from '../data/repos'
+import { confirmBankMatch } from '../data/bank'
+import { transactionsRepo } from '../data/repos'
 import { parseBankFile, type ImportResult, type ParsedBankRow } from '../domain/bankImport'
-import { allocatePayment, formatDate } from '../domain/invoices'
+import { formatDate } from '../domain/invoices'
 import { suggestMatch, type MatchSuggestion } from '../domain/matching'
 import { formatCents } from '../domain/money'
 import type { BankTransaction, MatchType } from '../domain/types'
@@ -64,18 +64,8 @@ async function confirmImport() {
 }
 
 async function confirm(tx: BankTransaction, match: { type: MatchType; ids: string[] }) {
-  await attempt(async () => {
-    if (match.type === 'invoice') {
-      const invoices = match.ids.map((id) => practice.invoices.find((i) => i.id === id)!).filter(Boolean)
-      const credits = practice.invoices.filter((i) => i.kind === 'credit')
-      for (const p of allocatePayment(invoices, credits, tx.amountCents)) {
-        await invoicesRepo.update(p.id, { paidCents: p.paidCents, status: p.status })
-      }
-    } else if (match.type === 'consults') {
-      await Promise.all(match.ids.map((id) => consultsRepo.update(id, { bankTransactionId: tx.id })))
-    }
-    await transactionsRepo.update(tx.id, { match, confirmed: true })
-  }, 'Koppelen mislukt')
+  const credits = practice.invoices.filter((i) => i.kind === 'credit')
+  await attempt(() => confirmBankMatch(tx.id, match, credits), 'Koppelen mislukt')
 }
 
 const MATCH_LABEL: Record<MatchType, string> = {
