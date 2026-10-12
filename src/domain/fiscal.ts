@@ -1,37 +1,49 @@
+export interface Bracket {
+  upToCents: number | null
+  rate: number
+}
+
 export interface FiscalParameters {
   year: number
-  incomeTaxBrackets: { upToCents: number | null; rate: number }[]
-  zvwRate: number
-  zvwMaxIncomeCents: number
-  zelfstandigenaftrekCents: number
-  startersaftrekCents: number
-  mkbWinstvrijstellingRate: number
-  urencriteriumHours: number
-  korThresholdCents: number
+  /** Personenbelasting, progressive brackets on net taxable professional income. */
+  incomeTaxBrackets: Bracket[]
+  /** Belastingvrije som (basisbedrag, alleenstaande zonder personen ten laste). */
+  taxFreeAmountCents: number
+  /** Aanvullende gemeentebelasting as a share of the income tax. */
+  municipalTaxRate: number
+  /** Sociale bijdragen zelfstandige in hoofdberoep. */
+  socialContribution: { tiers: Bracket[]; minimumYearCents: number; managementFeeRate: number }
+  /** Vrijstellingsregeling kleine ondernemingen (btw). */
+  smallBusinessThresholdCents: number
+  /** Optional kilometre rate for the mileage log; 0 = log only (self-employed deduct actual car costs). */
   mileageRateCents: number
   capitalizeThresholdCents: number
-  kia: { fromCents: number; toCents: number; rate: number }[]
-  /** False until a tax adviser has confirmed the values. */
+  /** False until an accountant has confirmed the values. */
   verified: boolean
 }
 
-/** Indicative 2026 values — controleer met je fiscalist. Stored in Firestore `fiscalParameters/2026`; this is the seed and fallback. */
+/** Indicative values inkomstenjaar 2026 / aanslagjaar 2027 — controleer met je boekhouder. Seed and fallback for `fiscalParameters/2026`. */
 export const FISCAL_DEFAULTS_2026: FiscalParameters = {
   year: 2026,
   incomeTaxBrackets: [
-    { upToCents: 3888300, rate: 0.3575 },
-    { upToCents: 7842600, rate: 0.3756 },
-    { upToCents: null, rate: 0.495 },
+    { upToCents: 1672000, rate: 0.25 },
+    { upToCents: 2951000, rate: 0.4 },
+    { upToCents: 5107000, rate: 0.45 },
+    { upToCents: null, rate: 0.5 },
   ],
-  zvwRate: 0.0485,
-  zvwMaxIncomeCents: 7940900,
-  zelfstandigenaftrekCents: 120000,
-  startersaftrekCents: 212300,
-  mkbWinstvrijstellingRate: 0.127,
-  urencriteriumHours: 1225,
-  korThresholdCents: 2000000,
-  mileageRateCents: 23,
-  capitalizeThresholdCents: 45000,
-  kia: [{ fromCents: 290100, toCents: 7168300, rate: 0.28 }],
+  taxFreeAmountCents: 1118000,
+  municipalTaxRate: 0.07,
+  socialContribution: {
+    tiers: [
+      { upToCents: 7502454, rate: 0.205 },
+      { upToCents: 11056242, rate: 0.1416 },
+      { upToCents: null, rate: 0 },
+    ],
+    minimumYearCents: 356168,
+    managementFeeRate: 0.04,
+  },
+  smallBusinessThresholdCents: 2500000,
+  mileageRateCents: 0,
+  capitalizeThresholdCents: 100000,
   verified: false,
 }

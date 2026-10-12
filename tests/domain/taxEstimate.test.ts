@@ -1,55 +1,61 @@
 import { describe, expect, test } from 'vitest'
 import { FISCAL_DEFAULTS_2026, type FiscalParameters } from '../../src/domain/fiscal'
-import { dayOfYear, estimateTax, reservationToDate } from '../../src/domain/taxEstimate'
+import { dayOfYear, estimateTax, reservationToDate, socialContributions } from '../../src/domain/taxEstimate'
 
 const params: FiscalParameters = {
   ...FISCAL_DEFAULTS_2026,
-  incomeTaxBrackets: [{ upToCents: 4000000, rate: 0.4 }, { upToCents: null, rate: 0.5 }],
-  zvwRate: 0.0485,
-  zvwMaxIncomeCents: 7940900,
-  zelfstandigenaftrekCents: 120000,
-  startersaftrekCents: 0,
-  mkbWinstvrijstellingRate: 0.127,
-  urencriteriumHours: 1225,
+  incomeTaxBrackets: [{ upToCents: 1000000, rate: 0.25 }, { upToCents: null, rate: 0.5 }],
+  taxFreeAmountCents: 500000,
+  municipalTaxRate: 0.07,
+  socialContribution: { tiers: [{ upToCents: 5000000, rate: 0.2 }, { upToCents: null, rate: 0 }], minimumYearCents: 300000, managementFeeRate: 0 },
 }
 
+describe('socialContributions', () => {
+  test('deductible contributions: c = 20% × (profit − c)', () => {
+    expect(socialContributions(6000000, params)).toBe(1000000)
+  })
+  test('minimum applies to small and negative profits', () => {
+    expect(socialContributions(1000000, params)).toBe(300000)
+    expect(socialContributions(-50000, params)).toBe(300000)
+  })
+  test('management fee on top', () => {
+    const withFee = { ...params, socialContribution: { ...params.socialContribution, managementFeeRate: 0.04 } }
+    expect(socialContributions(1000000, withFee)).toBe(312000)
+  })
+  test('upper tier at 0%', () => {
+    // income above the 50.000 limit is not charged: c = 0.2 × 5.000.000
+    expect(socialContributions(20000000, params)).toBe(1000000)
+  })
+})
+
 describe('estimateTax', () => {
-  test('with zelfstandigenaftrek when hours criterion met', () => {
-    expect(estimateTax({ profitCents: 6000000, hours: 1300, isStarter: false, params })).toEqual({
-      taxableProfitCents: 5133240, incomeTaxCents: 2166620, zvwCents: 248962, totalCents: 2415582, zelfstandigenaftrekApplied: true,
+  test('personenbelasting with belastingvrije som and gemeentebelasting', () => {
+    expect(estimateTax({ profitCents: 6000000, params })).toEqual({
+      socialContributionsCents: 1000000, taxableIncomeCents: 5000000, incomeTaxCents: 2125000, municipalTaxCents: 148750, totalCents: 3273750,
     })
   })
-  test('without zelfstandigenaftrek below 1225 hours', () => {
-    expect(estimateTax({ profitCents: 6000000, hours: 1000, isStarter: false, params })).toMatchObject({
-      taxableProfitCents: 5238000, incomeTaxCents: 2219000, zvwCents: 254043, zelfstandigenaftrekApplied: false,
+  test('low profit', () => {
+    expect(estimateTax({ profitCents: 1000000, params })).toEqual({
+      socialContributionsCents: 300000, taxableIncomeCents: 700000, incomeTaxCents: 50000, municipalTaxCents: 3500, totalCents: 353500,
     })
   })
-  test('small profit never goes negative', () => {
-    expect(estimateTax({ profitCents: 50000, hours: 1300, isStarter: false, params })).toMatchObject({ taxableProfitCents: 0, totalCents: 0 })
-  })
-  test('loss gives zero tax', () => {
-    expect(estimateTax({ profitCents: -100000, hours: 0, isStarter: false, params }).totalCents).toBe(0)
-  })
-  test('startersaftrek on top of zelfstandigenaftrek', () => {
-    const r = estimateTax({ profitCents: 6000000, hours: 1300, isStarter: true, params: { ...params, startersaftrekCents: 200000 } })
-    expect(r.taxableProfitCents).toBe(Math.round((6000000 - 320000) * 0.873))
-  })
-  test('Zvw capped at maximum income', () => {
-    const r = estimateTax({ profitCents: 20000000, hours: 1300, isStarter: false, params })
-    expect(r.zvwCents).toBe(Math.round(7940900 * 0.0485))
+  test('no profit: only the minimum contribution', () => {
+    expect(estimateTax({ profitCents: 0, params })).toMatchObject({ incomeTaxCents: 0, municipalTaxCents: 0, totalCents: 300000 })
   })
 })
 
 describe('reservationToDate', () => {
-  test('annualises profit and hours and takes the elapsed share', () => {
+  test('annualises profit and takes the elapsed share', () => {
     expect(dayOfYear('2026-07-02')).toBe(183)
-    const projected = estimateTax({ profitCents: (3000000 * 365) / 183, hours: (650 * 365) / 183, isStarter: false, params })
-    expect(reservationToDate(3000000, '2026-07-02', 650, false, params)).toBe(Math.round((projected.totalCents * 183) / 365))
+    const projected = estimateTax({ profitCents: (3000000 * 365) / 183, params })
+    expect(reservationToDate(3000000, '2026-07-02', params)).toBe(Math.round((projected.totalCents * 183) / 365))
   })
 })
 
-test('2026 defaults are marked unverified', () => {
+test('2026 defaults are Belgian and unverified', () => {
   expect(FISCAL_DEFAULTS_2026.verified).toBe(false)
-  expect(FISCAL_DEFAULTS_2026.capitalizeThresholdCents).toBe(45000)
-  expect(FISCAL_DEFAULTS_2026.urencriteriumHours).toBe(1225)
+  expect(FISCAL_DEFAULTS_2026.incomeTaxBrackets.map((b) => b.rate)).toEqual([0.25, 0.4, 0.45, 0.5])
+  expect(FISCAL_DEFAULTS_2026.taxFreeAmountCents).toBe(1118000)
+  expect(FISCAL_DEFAULTS_2026.smallBusinessThresholdCents).toBe(2500000)
+  expect(FISCAL_DEFAULTS_2026.socialContribution.minimumYearCents).toBe(356168)
 })
