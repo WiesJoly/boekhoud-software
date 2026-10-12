@@ -1,88 +1,73 @@
-# Boekhouding psychologen – MVP design
+# Boekhouding psychologen – MVP design (België)
 
-Date: 2026-10-12 · Source: `Boekhoudsoftware voor psychologen – functioneel ontwerp.md`
+Date: 2026-10-12 · Source: `Boekhoudsoftware voor psychologen – functioneel ontwerp.md` (written for NL; converted to Belgian rules on the user's request, 2026-10-12)
 
 ## Intent
 
-A web app that lets a solo, self-employed psychologist in the Netherlands (eenmanszaak) keep a closed bookkeeping, apply btw correctly per service, and produce year-end figures for the income tax return — without medical data entering the bookkeeping. Target: weekly routine done in ~10 minutes.
+A web app that lets a self-employed psychologist in **Belgium** (natuurlijk persoon, zelfstandige in hoofdberoep) keep a closed bookkeeping, apply btw correctly per service, set aside personenbelasting and sociale bijdragen, and produce year-end figures for the accountant — without medical data entering the bookkeeping. Target: weekly routine done in ~10 minutes.
 
 **Decisions made with the user**
 - Stack: Vue 3 + TypeScript + Vite, Tailwind CSS v4, Firebase (Auth, Firestore, Storage).
-- External integrations are replaced by file imports: bank via CSV/MT940, declarations/retourinformatie via CSV, receipts via manual upload (no OCR). Live PSD2, VECOZO, OCR and payment links are out of scope.
-- Development and tests run on the Firebase Local Emulator Suite; real project config goes in `.env` (placeholders committed as `.env.example`).
+- Country: **België** (changed from NL). All fiscal rules, terminology and identifiers are Belgian.
+- External integrations replaced by file imports: bank via **CODA** (all Belgian banks), MT940 and generic bank CSV; sessions/terugbetalingen via CSV export from the ELP-platform / netwerk / EPD; receipts via manual upload (no OCR). Live PSD2, MyCareNet/eHealth, Peppol sending, OCR and payment links are out of scope.
+- Development and tests run on the Firebase Local Emulator Suite; real project config in `.env`.
 - Public sign-up; one practice per account (practice id = user uid).
 
-**Assumptions**
-- UI language Dutch.
-- Approximate 2026 fiscal parameters are seeded and visibly marked "controleer met fiscalist".
+**Assumptions** (marked in the UI as "controleer met je boekhouder")
+- UI language Dutch (Vlaanderen). Hoofdberoep. Single, no dependants for the tax estimate.
+- Indicative 2026 fiscal parameters (inkomstenjaar 2026 / aanslagjaar 2027) are seeded with `verified: false`.
 
-**Out of scope for MVP:** groepspraktijk/multiple behandelaars, BV/dga, personeel, Jeugdwet-toewijzingscontrole, XAF auditfile, 2FA, automatic e-mail sending (reminders are listed as tasks; the user sends them), client portal.
+**Out of scope for MVP:** groepspraktijk, vennootschap (BV), personeel, Peppol-verzending (only a warning and the data on the invoice), btw verlegd for foreign services (hint only), XAF/accounting software export formats, 2FA, automatic e-mails, client portal, bijberoep.
 
-## Architecture
+## Belgian rules applied
 
-- Single-page app. The browser talks to Firestore directly; security rules restrict every document under `practices/{uid}` to that user. `fiscalParameters` is globally readable, not writable from the client.
-- All business rules live in `src/domain/` — pure TypeScript, no Vue or Firebase imports, fully unit tested with Vitest.
-- `src/data/` contains thin Firestore repositories (one per collection) that convert documents ⇄ domain types.
-- `src/stores/` Pinia stores subscribe to repositories and expose reactive state to views.
-- `src/views/` one view per screen; shared UI in `src/components/`.
+- **Btw per dienst**: `exempt` = vrijgesteld krachtens art. 44 WBTW (therapeutic care by erkende klinisch psycholoog / orthopedagoog / psychotherapeut); `standard21` = 21% (coaching, arbeidspsychologie, trainingen, deskundigenverslagen); `outside` = buiten het toepassingsgebied (annuleringsvergoedingen, subsidies). Invoice text for exempt lines: "Vrijgesteld van btw krachtens artikel 44 van het Btw-Wetboek."
+- **Btw-profiel**: `exempt` (vrijgestelde btw-plichtige art. 44: geen periodieke aangifte, inkoop-btw is kost), `mixed` (gemengde btw-plichtige: kwartaalaangifte, aftrek via werkelijk gebruik of algemeen verhoudingsgetal, **naar boven afgerond op een geheel percentage**), `taxed` (gewone btw-plichtige), `small` (vrijstellingsregeling kleine ondernemingen, drempel € 25.000: geen btw aanrekenen, geen aftrek, vermelding "Bijzondere vrijstellingsregeling kleine ondernemingen").
+- **Btw-aangifte (kwartaal)**: roosters 00 (vrijgestelde handelingen), 03 (maatstaf 21%), 54 (verschuldigde btw), 59 (aftrekbare btw), 71 (te betalen) / 72 (terug te vorderen). Small-scheme signal when taxed turnover stays under the threshold (art. 44-omzet telt in principe niet mee).
+- **Peppol**: warning when an invoice to an organisation contains taxed (21%) lines: since 2026 this must be sent as a structured e-invoice via Peppol.
+- **Betaalreferentie**: gestructureerde mededeling `+++XXX/XXXX/XXXXX+++` derived from the invoice number (10 digits + mod-97 check, 00 → 97). Neutral: never contains care information.
+- **Personenbelasting**: progressive brackets on net beroepsinkomen (winst − sociale bijdragen), minus the tax on the belastingvrije som (at the lowest rate), plus gemeentebelasting as a percentage of the tax. No forfaitaire beroepskosten (actual costs).
+- **Sociale bijdragen** (hoofdberoep): 20,5% up to the first limit, 14,16% up to the second, nothing above; yearly minimum; plus beheerskosten. Contributions are deductible, so the base is solved as income after contributions.
+- **Belastingreservering** = geschatte personenbelasting + gemeentebelasting + sociale bijdragen (meant for voorafbetalingen).
+- **Bewaartermijn**: 10 jaar.
+- **Afschrijvingen**: lineair, pro rata temporis (monthly); drempel voor activering is a fiscal parameter.
 
 ## Data model (`practices/{uid}/…`)
 
-All amounts are integer cents. Dates are ISO strings `YYYY-MM-DD`.
+All amounts are integer cents. Dates ISO `YYYY-MM-DD`.
 
 | Collection | Key fields |
 | --- | --- |
-| `settings/main` (doc) | name, address, kvk, agbPractice, agbProvider, big, vatNumber, iban, vatProfile (`exempt` \| `mixed` \| `taxed`) |
-| `services` | name, rateCents, vatCode (`exempt` \| `standard21` \| `outside`), nzaMaxCents?, revenueAccount, isCare |
-| `debtors` | type (`insurer` \| `municipality` \| `client` \| `organisation`), displayName (client: client number), invoiceName, address, email, remindersEnabled |
-| `consults` | externalId, date, debtorId, serviceCode, amountCents, status (`registered` \| `declared` \| `rejected` \| `paid`), rejectionReason?, paidCents, resolution? |
-| `invoices` | number, kind (`invoice` \| `credit`), creditOf?, date, dueDate, debtorId, lines[{serviceId, description, date, qty, unitCents, vatCode}], totals, paymentReference, paidCents, status, reminders[] |
-| `counters/invoice` (doc) | year, next |
-| `expenses` | date, supplier, category, amountInclCents, vatCents, deductibleVatCents, receiptPath?, capitalize?, assetLifeYears? |
-| `supplierRules` | supplierKey → category |
-| `bankTransactions` | date, amountCents, counterparty, description, importHash, match? {type: `invoice`\|`consults`\|`expense`\|`private`\|`other`, ids[]}, confirmed |
-| `mileage` | date, from, to, km, purpose |
-| `hours` | date, hours, kind (`direct` \| `admin` \| `training` \| `intervision`) |
+| `settings/main` (doc) | name, address, enterpriseNumber (KBO), vatNumber, rizivNumber, visumNumber, iban, vatProfile (`exempt` \| `mixed` \| `taxed` \| `small`), openingBalanceCents, openingBalanceDate |
+| `services` | name, code (pseudocode/nomenclatuur), rateCents, vatCode (`exempt` \| `standard21` \| `outside` \| null), maxRateCents? (conventietarief), revenueAccount, isCare |
+| `debtors` | type (`mutuality` \| `network` \| `client` \| `organisation`), displayName (client: cliëntnummer), invoiceName, address, email, vatNumber?, remindersEnabled |
+| `consults` (UI: sessies) | externalId, date, debtorId, serviceCode, amountCents, status (`registered` \| `declared` \| `rejected` \| `paid`), rejectionReason?, paidCents, invoiceId?, bankTransactionId?, resolution? |
+| `invoices` | number, kind, creditOf?, date, dueDate, debtorId, lines[], totals, paymentReference (OGM), paidCents, status, reminders[], consultIds? |
+| `counters/invoice` | year, next |
+| `expenses` | date, supplier, category, amountInclCents, vatCents, vatAttribution, deductibleVatCents, receiptPath?, capitalize, assetLifeYears? |
+| `supplierRules`, `bankTransactions`, `mileage` | as before |
 
-Global: `fiscalParameters/{year}`: incomeTaxBrackets, zvwRate, zvwMax, zelfstandigenaftrek, startersaftrek, mkbWinstvrijstelling, korThreshold, mileageRate, capitalizeThreshold, kiaBrackets, validFrom.
+Global `fiscalParameters/{year}`: incomeTaxBrackets, taxFreeAmountCents, municipalTaxRate, socialContribution {minimumYearCents, tiers[{upToCents, rate}], managementFeeRate}, smallBusinessThresholdCents, mileageRateCents, capitalizeThresholdCents, verified.
 
 ## Domain modules (`src/domain/`)
 
-- `money` — cents arithmetic, formatting (€ 1.234,56), parsing Dutch amounts.
-- `vat` — line VAT per vatCode; input-VAT treatment per profile (exempt → VAT becomes cost; mixed → pro-rata by taxed/total turnover; taxed → fully deductible); warnings: service without vatCode, exempt invoice to an organisation, rate above NZa maximum.
-- `invoiceNumber` — format `YYYY-NNNN`, next-number logic (reset per year). Allocation runs in a Firestore transaction in the repository.
-- `paymentReference` — neutral reference `"<Praktijk> – factuur <nr>"`, never containing care information.
-- `bankImport` — parse generic CSV (configurable columns, common Dutch bank exports: ING, Rabobank, ABN AMRO) and MT940; dedupe via hash.
-- `matching` — suggest matches: invoice number / payment reference in description → invoice; insurer lump sum → consults from retourinformatie whose amounts sum to the payment; amount+supplier → expense.
-- `declarationImport` — parse declaration/retour CSV (externalId, date, debtor, serviceCode, amount, status, rejectionReason, paidAmount); rejection reasons map to standard actions.
-- `expenses` — category list with default accounts, supplier-rule suggestion, capitalization suggestion above threshold.
-- `depreciation` — straight-line monthly schedule, residual value 0 by default.
-- `reminders` — which invoices need a reminder (14 / 28 days past invoice date, respecting debtor setting).
-- `taxEstimate` — profit to date → zelfstandigenaftrek (if hours ≥ 1225), MKB-winstvrijstelling, income tax brackets, Zvw; reservation; annualised projection.
-- `annualReport` — chart of accounts (~40 named accounts), profit & loss and balance sheet derived from invoices, consults, expenses, depreciation, bank; "nog te declareren" for unbilled consults at year end.
-- `vatReturn` — quarterly figures (1a turnover/VAT 21%, 1e exempt, 5b input VAT) and KOR signal.
+money, csv, vat (incl. `small` profile, Belgian pro rata rounding, warnings `MISSING_VAT_CODE`, `EXEMPT_TO_ORGANISATION`, `ABOVE_MAX_RATE`, `PEPPOL_REQUIRED`), invoiceNumber (numbering + OGM + extraction), bankImport (CODA, MT940, generic CSV), declarationImport (sessions CSV, Belgian statuses and reasons), matching (OGM / invoice number, ziekenfonds-verzamelbetalingen, expenses), expenses (Belgian hints), depreciation, invoices, fiscal (BE 2026 defaults), taxEstimate (PB + gemeentebelasting + sociale bijdragen), vatReturn (BE roosters + kleine-ondernemingssignaal), accounts (Belgian names), annualReport (resultatenrekening, balans, dagboek-export).
 
 ## Screens
 
-1. **Login / Registreren**
-2. **Overzicht** — available balance (bank balance − tax reservation), revenue month/year split care/other, outstanding per debtor type, unbilled consults, task list.
-3. **Consulten** — import, filter by status, resolve rejection (action per reason), mark resubmitted.
-4. **Facturen** — create from services with warnings, print view (browser print → PDF), credit invoice, mark paid, reminder status. Client names only appear here.
-5. **Uitgaven** — add with receipt upload, suggested category, capitalization; mileage tab.
-6. **Bank** — import with preview, suggested matches, confirm / private.
-7. **Belasting** — VAT quarter (if profile ≠ exempt), KOR signal, tax estimate, urencriterium + hours entry, year-end P&L and balance, CSV export (pseudonymised: no names or service codes).
-8. **Instellingen** — practice details, VAT profile, services.
+1. Login / Registreren
+2. Overzicht — beschikbaar (bank − reservering), omzet maand/jaar zorg vs overig, openstaand per debiteurtype, nog te factureren sessies, taken.
+3. Sessies — import, status, weigering oplossen.
+4. Facturen — nieuw (met waarschuwingen incl. Peppol), afdrukken/PDF, creditnota, betaald, herinneringen.
+5. Uitgaven — bon, categorie, activering; kilometerlogboek.
+6. Bank — CODA/MT940/CSV import, koppelingen, privé.
+7. Belasting — btw-kwartaal (if profile mixed/taxed), kleine-ondernemingssignaal, reservering PB + sociale bijdragen, jaarafsluiting, export.
+8. Instellingen — praktijkgegevens (KBO, btw, RIZIV, visum), btw-profiel, diensten, debiteuren.
 
 ## Privacy
 
-Dashboards, reports and exports use client numbers and aggregated amounts; no names or prestatiecodes. Payment references are neutral. Data minimised to financial fields.
+GDPR: dashboards, reports and exports use client numbers and aggregated amounts; no names or pseudocodes. Payment references are a neutral OGM. Data minimised to financial fields.
 
-## Error handling
+## Error handling, testing
 
-Imports show a preview with per-row errors before saving. Repository failures surface as toast messages; nothing is silently ignored. Invoices cannot be deleted, only credited.
-
-## Testing
-
-- Vitest unit tests for every domain module, written test-first.
-- Firestore security-rules tests against the emulator (`@firebase/rules-unit-testing`).
-- Manual end-to-end check of main flows with Playwright against the emulator at the end.
+Unchanged: import previews with per-row errors; toasts on failures; invoices are never deleted (creditnota). Vitest unit tests for every domain module (test-first), Firestore rules tests on the emulator, Playwright walkthrough at the end.

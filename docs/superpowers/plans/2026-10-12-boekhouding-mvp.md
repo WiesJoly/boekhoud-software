@@ -446,3 +446,57 @@ Rules:
 - [ ] **Step 2:** Start emulators + seed + dev server; with Playwright: register → fill settings → add default services → create client debtor → create invoice → import ING fixture containing that invoice number → confirm match → invoice shows paid → overview shows revenue and no "banktransacties" task. Screenshot each screen.
 - [ ] **Step 3:** Fix any defects found (each with a failing test first where it is domain logic).
 - [ ] **Step 4:** Add `README.md` with setup (Java, `npm i`, `npm run emulators`, `npm run seed`, `npm run dev`, connecting a real Firebase project via `.env`, `firebase deploy --only firestore:rules,storage,hosting`). Commit `docs: readme and e2e verification`.
+
+---
+
+## Amendment 2026-10-12: België
+
+The user changed the target country from NL to **België** after Task 14. The spec was rewritten (same path). Tasks B1–B7 convert the completed tasks; Tasks 15–21 then run with the Belgian names below. Where an earlier task conflicts with this amendment, the amendment wins.
+
+**Global Constraints (replacing NL items):** payment reference = OGM `+++XXX/XXXX/XXXXX+++`; exempt invoice text "Vrijgesteld van btw krachtens artikel 44 van het Btw-Wetboek."; small-scheme text "Bijzondere vrijstellingsregeling kleine ondernemingen"; bewaartermijn 10 jaar; no NZa, BIG, AGB, KvK, VECOZO, urencriterium, zelfstandigenaftrek, MKB-winstvrijstelling, KOR, Zvw anywhere.
+
+### Task B1: Types, btw rules
+- `types.ts`: `VatProfile` adds `'small'`; `DebtorType = 'mutuality' | 'network' | 'client' | 'organisation'`; `Settings` = name, address, enterpriseNumber, vatNumber, rizivNumber, visumNumber, iban, vatProfile, openingBalanceCents, openingBalanceDate; `Service.nzaMaxCents` → `maxRateCents`; `Debtor.vatNumber?: string`; `HoursEntry` removed.
+- `vat.ts`: `inputVat` with profile `small` → nothing deductible; `proRata` rounds **up** to a whole percentage (`proRata(3001, 10000) === 0.31`, `proRata(0,0) === 0`); warnings `ABOVE_MAX_RATE` (replaces `ABOVE_NZA_MAX`) and `PEPPOL_REQUIRED` (organisation debtor and any `standard21` line); `invoiceWarnings(lines, debtor, services)` unchanged signature.
+- Tests updated first; `npm test` RED → GREEN.
+
+### Task B2: Gestructureerde mededeling
+- `structuredCommunication(invoiceNumber: string): string` — digits of `YYYY-NNNN…` → base = year + seq padded to 6 (10 digits); check = base mod 97, 0 → 97; format `+++123/4567/89012+++`. Test: `'2026-0142'` → base `2026000142`, check `2026000142 % 97`.
+- `paymentReference(practiceName, number)` returns the OGM (practiceName unused → signature becomes `paymentReference(invoiceNumber)`).
+- `extractInvoiceNumbers(text)` also recognises OGMs (with or without `+++`, `***`, slashes or spaces) and maps them back to `YYYY-NNNN` when the check digits are valid.
+
+### Task B3: Bank import België
+- Formats: `coda`, `mt940`, `csv` (generic, `;` or `,`, header synonyms: datum/date/uitvoeringsdatum/boekingsdatum; bedrag/amount; tegenpartij/naam tegenpartij/counterparty/naam; omschrijving/mededeling/description/vrije mededeling/gestructureerde mededeling — joined). NL ING/Rabobank/ABN formats removed.
+- CODA: 128-char records; record `21`: sign at pos 32 (`0` credit, `1` debit), amount pos 33–47 (15 digits, 3 decimals), value date pos 48–53 `DDMMYY`, communication type pos 62 (`1` structured: pos 63–65 type `101` + 12 digits OGM), communication pos 63–115; record `22` continues communication pos 11–63; record `23`: counterparty account pos 11–47, name pos 48–82, communication continuation 83–125. Entry date pos 116–121 used as date.
+- Tests with fixtures `tests/fixtures/sample.cod`, `belfius.csv` (`;`, Dutch headers), existing `sample.mt940`.
+
+### Task B4: Sessies-import en matching
+- CSV header `sessie_id;datum;ziekenfonds;pseudocode;bedrag;status;reden;betaald` (old NL header still accepted: `consult_id`, `debiteur`, `prestatiecode`, `afwijsreden`). Statuses `geregistreerd|ingediend|geweigerd|betaald` (+ NL synonyms).
+- `RejectionReason = 'insurability' | 'max_sessions' | 'referral_missing' | 'other'`: verzekerbaar/verzekerbaarheid → insurability; maximum/aantal sessies → max_sessions; verwijzing/verwijsbrief → referral_missing.
+- Actions: insurability → 'Verzekerbaarheid niet in orde: vraag de cliënt de situatie bij het ziekenfonds na te kijken of factureer de sessie aan de cliënt.'; max_sessions → 'Maximum aantal terugbetaalde sessies bereikt: bespreek met de cliënt verdere sessies aan het privétarief.'; referral_missing → 'Verwijzing ontbreekt: vraag de verwijzing op en dien opnieuw in.'; other → 'Bekijk de weigering op het platform en dien zo nodig opnieuw in.'
+- Matching: OGM/invoice number → invoice; counterparty contains a `mutuality`/`network` debtor name → paid sessions summing to the amount.
+
+### Task B5: Fiscale parameters en belastingraming
+- `FiscalParameters`: `year`, `incomeTaxBrackets`, `taxFreeAmountCents`, `municipalTaxRate`, `socialContribution: { tiers: {upToCents: number|null; rate}[]; minimumYearCents; managementFeeRate }`, `smallBusinessThresholdCents`, `mileageRateCents`, `capitalizeThresholdCents`, `verified`.
+- Defaults 2026 (AJ 2027): brackets 25% tot € 16.720, 40% tot € 29.510, 45% tot € 51.070, 50%; belastingvrije som € 11.180; gemeentebelasting 7%; sociale bijdragen 20,5% tot € 75.024,54, 14,16% tot € 110.562,42, 0% daarboven, minimum € 3.561,68/jaar (4 × € 890,42), beheerskosten 4%; kleine onderneming € 25.000; km-vergoeding 0 (zelfstandigen: werkelijke kosten); activering € 1.000.
+- `socialContributions(profitCents, params): number` — solve `c = max(min, f(profit − c)) × (1 + fee)` by fixed-point iteration (20 rounds) where `f` applies the tiers; profit ≤ 0 → minimum.
+- `estimateTax({ profitCents, params })` → `{ socialContributionsCents, taxableIncomeCents, incomeTaxCents, municipalTaxCents, totalCents }`; taxable = max(0, profit − social); income tax = brackets(taxable) − brackets(min(taxable, taxFree)) (vermindering belastingvrije som at the bracket rates), not below 0; municipal = round(incomeTax × rate).
+- `reservationToDate(profitToDateCents, today, params)` — annualise, estimate, scale back.
+- Tests with simple params: brackets `[{upTo:1000000, rate:0.25},{upTo:null, rate:0.5}]`, taxFree 500000, municipal 0.07, social tiers `[{upTo:5000000, rate:0.2},{upTo:null, rate:0}]`, minimum 300000, fee 0:
+  - profit 6000000 → social c = 0.2 × (6000000 − c) → c = 1000000; taxable 5000000; tax = 250000 + 2000000 − 125000 = 2125000; municipal 148750; total 3273750.
+  - profit 1000000 → social = max(300000, 0.2×(1000000−c)) → c≈166667 < min → 300000; taxable 700000; tax 250000·… = 175000 − 125000 = 50000; municipal 3500; total 353500.
+  - profit 0 → social 300000, tax 0.
+
+### Task B6: Btw-aangifte, rekeningen, categorieën, jaarrapport, standaarddiensten
+- `vatReturn(year, quarter, invoices, expenses)` → `{ grid00Cents, grid03Cents, grid54Cents, grid59Cents, grid71Cents, grid72Cents }` (71 = max(0, 54 − 59), 72 = max(0, 59 − 54)).
+- `smallBusinessSignal(taxedTurnoverYearCents, params)` replaces `korSignal`.
+- Accounts: debiteuren-ziekenfondsen, debiteuren-netwerken, debiteuren-clienten, debiteuren-overig, nog-te-factureren (replaces nog-te-declareren), btw-rekening-courant (vorderen/schulden split kept as btw-te-vorderen / btw-te-betalen), omzet-riziv (sessies via ziekenfonds), omzet-netwerk, omzet-zelfbetalers, omzet-annulering, omzet-coaching, omzet-training, omzet-verslagen, omzet-onderverhuur, omzet-subsidies, omzet-overig; costs incl. kosten-sociale-bijdragen? No — sociale bijdragen are shown in the tax estimate, not in the bookkeeping result.
+- Categories: Belgian hints (wagen: aftrekbaarheid volgens CO2-uitstoot; kantoor thuis: pro rata; representatie: 50% aftrekbaar, btw niet aftrekbaar; restaurantkosten 69%).
+- Default services: Sessie eerstelijnspsychologische zorg (conventie, exempt, omzet-riziv, care), Psychotherapie / individuele sessie privé (exempt, omzet-zelfbetalers, care), Annuleringsvergoeding (outside, omzet-annulering), Coaching (21%), Training of workshop (21%), Deskundigenverslag (21%), Onderverhuur praktijkruimte (exempt, omzet-onderverhuur).
+- Annual report: debtor accounts by new types; consult revenue mutuality → omzet-riziv, network → omzet-netwerk, client → omzet-zelfbetalers.
+
+### Task B7: UI and data layer
+- Settings form: KBO-ondernemingsnummer, btw-nummer, RIZIV-nummer, visumnummer, IBAN; four btw-profielen. ServiceForm: btw options with Belgian explanations, "Conventietarief / maximumhonorarium". DebtorForm types Ziekenfonds / Netwerk of overheid / Cliënt / Organisatie (+ btw-nummer for organisations). Practice store: drop hours; `currentProRata` uses the BE rounding. Nav label "Sessies".
+- Verification: `npm test`, `npm run build`, rules tests.
+
+Tasks 15–21 then apply with: Consulten → Sessies; NZa → conventietarief; invoice print shows KBO, btw-nummer, RIZIV- en visumnummer, OGM, art. 44 text, Peppol warning; Belasting screen shows btw-roosters, kleine-ondernemingssignaal, PB + gemeentebelasting + sociale bijdragen, no urencriterium; bank import accepts CODA.
