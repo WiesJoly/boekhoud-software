@@ -7,3 +7,5 @@ dist
 firebase-debug.log
 firestore-debug.log
 ui-debug.log
+.superpowers
+.emulator-data

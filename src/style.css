@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Public Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Source Serif 4", ui-serif, Georgia, serif;
+
+  --color-ink: #1e2b2f;
+  --color-ink-soft: #55656a;
+  --color-paper: #f6f8f7;
+  --color-mist: #e2e9e5;
+  --color-line: #d3dcd8;
+  --color-sage: #3e6a5d;
+  --color-sage-dark: #2f5248;
+  --color-sage-light: #d6e4de;
+  --color-ochre: #b07f2a;
+  --color-ochre-light: #f3e7cf;
+  --color-brick: #a3443b;
+  --color-brick-light: #f4dcd8;
+}
+
+@layer base {
+  html { font-family: var(--font-sans); color: var(--color-ink); background: var(--color-paper); }
+  body { font-size: 15px; line-height: 1.5; }
+  :focus-visible { outline: 2px solid var(--color-sage); outline-offset: 2px; }
+  h1 { font-size: 1.6rem; font-weight: 600; letter-spacing: -0.01em; }
+  h2 { font-size: 1.1rem; font-weight: 600; }
+}
+
+@layer components {
+  .amount { font-family: var(--font-serif); font-variant-numeric: tabular-nums lining-nums; }
+  .btn-primary { @apply inline-flex items-center gap-2 rounded-md px-3.5 py-2 text-sm font-medium transition-colors disabled:opacity-50 bg-sage text-white hover:bg-sage-dark; }
+  .btn-secondary { @apply inline-flex items-center gap-2 rounded-md px-3.5 py-2 text-sm font-medium transition-colors disabled:opacity-50 border border-line bg-white text-ink hover:bg-mist; }
+  .btn-quiet { @apply inline-flex items-center gap-2 rounded-md px-3.5 py-2 text-sm font-medium transition-colors disabled:opacity-50 text-sage hover:bg-sage-light; }
+  .field { @apply block w-full rounded-md border border-line bg-white px-3 py-2 text-sm focus:border-sage focus:outline-none focus:ring-2 focus:ring-sage-light; }
+  .label { @apply mb-1 block text-sm font-medium text-ink-soft; }
+  .table { @apply w-full text-sm; }
+  .table th { @apply border-b border-line py-2 pr-4 text-left font-medium text-ink-soft; }
+  .table td { @apply border-b border-mist py-2.5 pr-4 align-top; }
+  .panel { @apply rounded-lg border border-line bg-white p-5; }
+  .badge { @apply inline-block rounded px-2 py-0.5 text-xs font-medium; }
+}
+
+@media print {
+  .no-print { display: none !important; }
+  body { background: white; }
+}
