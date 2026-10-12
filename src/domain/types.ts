@@ -1,6 +1,7 @@
 export type VatCode = 'exempt' | 'standard21' | 'outside'
-export type VatProfile = 'exempt' | 'mixed' | 'taxed'
-export type DebtorType = 'insurer' | 'municipality' | 'client' | 'organisation'
+export type VatProfile = 'exempt' | 'mixed' | 'taxed' | 'small'
+/** mutuality = ziekenfonds; network = netwerk geestelijke gezondheid of andere overheid. */
+export type DebtorType = 'mutuality' | 'network' | 'client' | 'organisation'
 export type ConsultStatus = 'registered' | 'declared' | 'rejected' | 'paid'
 export type VatAttribution = 'taxed' | 'exempt' | 'mixed'
 export type MatchType = 'invoice' | 'consults' | 'expense' | 'private' | 'other'
@@ -8,11 +9,12 @@ export type MatchType = 'invoice' | 'consults' | 'expense' | 'private' | 'other'
 export interface Settings {
   name: string
   address: string
-  kvk: string
-  agbPractice: string
-  agbProvider: string
-  big: string
+  /** KBO-ondernemingsnummer */
+  enterpriseNumber: string
   vatNumber: string
+  rizivNumber: string
+  /** Visumnummer FOD Volksgezondheid */
+  visumNumber: string
   iban: string
   vatProfile: VatProfile
   openingBalanceCents: number
@@ -25,7 +27,8 @@ export interface Service {
   code: string
   rateCents: number
   vatCode: VatCode | null
-  nzaMaxCents?: number
+  /** Conventietarief / maximumhonorarium */
+  maxRateCents?: number
   revenueAccount: string
   isCare: boolean
 }
@@ -39,6 +42,7 @@ export interface Debtor {
   invoiceName: string
   address: string
   email: string
+  vatNumber?: string
   remindersEnabled: boolean
 }
 
@@ -117,11 +121,4 @@ export interface Mileage {
   to: string
   km: number
   purpose: string
-}
-
-export interface HoursEntry {
-  id: string
-  date: string
-  hours: number
-  kind: 'direct' | 'admin' | 'training' | 'intervision'
 }
