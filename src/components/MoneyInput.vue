@@ -14,6 +14,15 @@ watch(model, (cents) => {
   if (parseAmount(text.value) !== cents) text.value = format(cents)
 })
 
+/** While typing: pass valid amounts on immediately, without reformatting the text. */
+function onInput() {
+  const cents = parseAmount(text.value)
+  if (cents !== null) {
+    invalid.value = false
+    model.value = cents
+  }
+}
+
 function commit() {
   const cents = parseAmount(text.value)
   invalid.value = cents === null
@@ -35,6 +44,8 @@ function commit() {
       inputmode="decimal"
       :required="required"
       :aria-invalid="invalid"
+      @focus="($event.target as HTMLInputElement).select()"
+      @input="onInput"
       @blur="commit"
       @keydown.enter="commit"
     />
