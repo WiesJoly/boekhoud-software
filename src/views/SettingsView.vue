@@ -10,7 +10,8 @@ import ServiceForm from '../components/ServiceForm.vue'
 import { debtorsRepo, servicesRepo, settingsRepo } from '../data/repos'
 import { accountName } from '../domain/accounts'
 import { DEFAULT_SERVICES } from '../domain/defaultServices'
-import type { Debtor, Service, Settings, VatCode } from '../domain/types'
+import type { Debtor, Service, Settings } from '../domain/types'
+import { DEBTOR_TYPE_LABEL, VAT_LABEL } from '../labels'
 import { attempt } from '../stores/toast'
 import { today, usePracticeStore } from '../stores/practice'
 
@@ -30,7 +31,6 @@ function saveSettings() {
   attempt(() => settingsRepo.save({ ...form }), 'Opslaan mislukt', 'Praktijkgegevens opgeslagen')
 }
 
-const VAT_LABEL: Record<VatCode, string> = { exempt: 'Vrijgesteld', standard21: '21%', outside: 'Buiten btw' }
 
 const editingService = ref<Service | 'new' | null>(null)
 function saveService(data: Omit<Service, 'id'>) {
@@ -56,7 +56,6 @@ function saveDebtor(data: Omit<Debtor, 'id'>) {
     'Debiteur opgeslagen',
   )
 }
-const DEBTOR_TYPE: Record<Debtor['type'], string> = { client: 'Cliënt', organisation: 'Organisatie', mutuality: 'Ziekenfonds', network: 'Netwerk of overheid' }
 </script>
 
 <template>
@@ -156,7 +155,7 @@ const DEBTOR_TYPE: Record<Debtor['type'], string> = { client: 'Cliënt', organis
         <tbody>
           <tr v-for="d in practice.debtors" :key="d.id">
             <td>{{ d.displayName }}</td>
-            <td class="text-ink-soft">{{ DEBTOR_TYPE[d.type] }}</td>
+            <td class="text-ink-soft">{{ DEBTOR_TYPE_LABEL[d.type] }}</td>
             <td class="text-ink-soft">{{ d.type === 'client' ? (d.remindersEnabled ? 'Aan' : 'Uit') : '—' }}</td>
             <td class="text-right"><button class="btn-quiet" @click="editingDebtor = d">Wijzigen</button></td>
           </tr>

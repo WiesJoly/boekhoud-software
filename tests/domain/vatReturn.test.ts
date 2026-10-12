@@ -42,3 +42,7 @@ describe('vrijstellingsregeling kleine ondernemingen', () => {
     expect(smallBusinessSignal(1500000, FISCAL_DEFAULTS_2026).explanation).toContain('artikel 44')
   })
 })
+
+test('small-business lines count towards the threshold turnover', () => {
+  expect(taxedTurnover(2026, [inv('s', '2026-05-01', [line(30000, 'smallBusiness')])])).toBe(30000)
+})

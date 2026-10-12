@@ -65,3 +65,13 @@ describe('invoiceWarnings', () => {
     expect(invoiceWarnings([line({ serviceId: 's3', vatCode: 'standard21' })], client, [...services, coaching])).toEqual([])
   })
 })
+
+describe('effectiveVatCode', () => {
+  test('small business scheme turns 21% lines into small-business lines without VAT', async () => {
+    const { effectiveVatCode } = await import('../../src/domain/vat')
+    expect(effectiveVatCode('standard21', 'small')).toBe('smallBusiness')
+    expect(effectiveVatCode('standard21', 'mixed')).toBe('standard21')
+    expect(effectiveVatCode('exempt', 'small')).toBe('exempt')
+    expect(lineVat(10000, 'smallBusiness')).toBe(0)
+  })
+})

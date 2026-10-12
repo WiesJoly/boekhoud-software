@@ -1,4 +1,5 @@
-export type VatCode = 'exempt' | 'standard21' | 'outside'
+/** smallBusiness = taxable service invoiced under the vrijstellingsregeling kleine ondernemingen (no VAT charged). */
+export type VatCode = 'exempt' | 'standard21' | 'outside' | 'smallBusiness'
 export type VatProfile = 'exempt' | 'mixed' | 'taxed' | 'small'
 /** mutuality = ziekenfonds; network = netwerk geestelijke gezondheid of andere overheid. */
 export type DebtorType = 'mutuality' | 'network' | 'client' | 'organisation'

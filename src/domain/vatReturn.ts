@@ -48,7 +48,7 @@ export function taxedTurnover(year: number, invoices: Invoice[]): number {
   return invoices
     .filter((i) => i.date.startsWith(prefix))
     .flatMap((i) => i.lines)
-    .filter((l) => l.vatCode === 'standard21')
+    .filter((l) => l.vatCode === 'standard21' || l.vatCode === 'smallBusiness')
     .reduce((s, l) => s + Math.round(l.qty * l.unitCents), 0)
 }
 

@@ -6,6 +6,11 @@ export function lineVat(netCents: number, code: VatCode): number {
   return code === 'standard21' ? Math.round(netCents * VAT_RATE) : 0
 }
 
+/** VAT code that actually applies on the invoice, given the practice profile. */
+export function effectiveVatCode(code: VatCode, profile: VatProfile): VatCode {
+  return code === 'standard21' && profile === 'small' ? 'smallBusiness' : code
+}
+
 /** Share of input VAT that may be reclaimed, given the practice profile and what the purchase is used for. */
 export function inputVat(
   vatCents: number,
