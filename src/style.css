@@ -1,44 +1,118 @@
 @import "tailwindcss";
 
+/*
+ * Colour tokens are semantic slots, re-coloured per theme below:
+ *   sage  = primary colour, ochre = attention, brick = error,
+ *   ink   = text, paper = page, surface = cards and fields, mist/line = subtle fills and borders.
+ * Theme and mode are set on <html data-theme="…" data-mode="light|dark"> by src/theme.ts.
+ */
 @theme {
   --font-sans: "Public Sans", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Source Serif 4", ui-serif, Georgia, serif;
+  --font-display: var(--font-sans);
 
   --color-ink: #1e2b2f;
   --color-ink-soft: #55656a;
   --color-paper: #f6f8f7;
+  --color-surface: #ffffff;
   --color-mist: #e2e9e5;
   --color-line: #d3dcd8;
   --color-sage: #3e6a5d;
   --color-sage-dark: #2f5248;
   --color-sage-light: #d6e4de;
+  --color-on-primary: #ffffff;
   --color-ochre: #b07f2a;
   --color-ochre-light: #f3e7cf;
   --color-brick: #a3443b;
   --color-brick-light: #f4dcd8;
 }
 
+/* ---------- Light palettes ---------- */
+:root[data-theme="blue"] {
+  --color-ink: #1d2733; --color-ink-soft: #56637a; --color-paper: #f5f7fb; --color-mist: #e3e9f2; --color-line: #d2dbe8;
+  --color-sage: #2f5f9e; --color-sage-dark: #234a7c; --color-sage-light: #dbe6f4;
+}
+:root[data-theme="teal"] {
+  --color-ink: #17302f; --color-ink-soft: #4f6a69; --color-paper: #f2f9f8; --color-mist: #ddeeed; --color-line: #c8e0df;
+  --color-sage: #1f7a80; --color-sage-dark: #165c61; --color-sage-light: #cdeceb;
+}
+:root[data-theme="lavender"] {
+  --color-ink: #2a2235; --color-ink-soft: #675c78; --color-paper: #f8f6fc; --color-mist: #ebe6f4; --color-line: #ddd5ec;
+  --color-sage: #7b5ea7; --color-sage-dark: #604685; --color-sage-light: #e9e1f5;
+}
+:root[data-theme="kitten"] {
+  --font-sans: "Nunito", ui-rounded, system-ui, sans-serif;
+  --font-display: "Fredoka", "Nunito", ui-rounded, sans-serif;
+  --radius-md: 0.85rem;
+  --radius-lg: 1.25rem;
+  --color-ink: #3d2a36; --color-ink-soft: #7d5f72; --color-paper: #fff7fa; --color-mist: #fbe9f0; --color-line: #f3d3e0;
+  --color-sage: #b84d78; --color-sage-dark: #9a3b62; --color-sage-light: #fbe3ec;
+  --color-ochre: #b9772a; --color-ochre-light: #fbecd6; --color-brick: #b3404f; --color-brick-light: #fadadd;
+  --paw-pattern: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%22120%22 viewBox=%220 0 120 120%22%3E%3Cg fill=%22%23b84d78%22 fill-opacity=%220.1%22%3E%3Cg transform=%22translate(28 30) rotate(-20)%22%3E%3Cellipse cx=%220%22 cy=%226%22 rx=%227%22 ry=%226%22/%3E%3Ccircle cx=%22-8%22 cy=%22-3%22 r=%223%22/%3E%3Ccircle cx=%22-3%22 cy=%22-8%22 r=%223%22/%3E%3Ccircle cx=%223%22 cy=%22-8%22 r=%223%22/%3E%3Ccircle cx=%228%22 cy=%22-3%22 r=%223%22/%3E%3C/g%3E%3Cg transform=%22translate(88 88) rotate(25)%22%3E%3Cellipse cx=%220%22 cy=%226%22 rx=%227%22 ry=%226%22/%3E%3Ccircle cx=%22-8%22 cy=%22-3%22 r=%223%22/%3E%3Ccircle cx=%22-3%22 cy=%22-8%22 r=%223%22/%3E%3Ccircle cx=%223%22 cy=%22-8%22 r=%223%22/%3E%3Ccircle cx=%228%22 cy=%22-3%22 r=%223%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* ---------- Dark mode: shared neutrals, then the primary colour per palette ---------- */
+:root[data-mode="dark"] {
+  --color-ink: #e4ece9; --color-ink-soft: #9db0aa; --color-paper: #111816; --color-surface: #18211e;
+  --color-mist: #222d29; --color-line: #31403b;
+  --color-sage: #86bfae; --color-sage-dark: #a5d3c5; --color-sage-light: #1d332d; --color-on-primary: #0d1f1a;
+  --color-ochre: #e0b25c; --color-ochre-light: #3a2e14; --color-brick: #f0958a; --color-brick-light: #3d1c19;
+}
+:root[data-mode="dark"][data-theme="blue"] {
+  --color-ink: #e3e9f2; --color-ink-soft: #9aa8bd; --color-paper: #10151d; --color-surface: #171e29; --color-mist: #212a37; --color-line: #303c4d;
+  --color-sage: #8db4ea; --color-sage-dark: #aecbf2; --color-sage-light: #1c2b42; --color-on-primary: #0c1830;
+}
+:root[data-mode="dark"][data-theme="teal"] {
+  --color-ink: #def0ef; --color-ink-soft: #93b3b1; --color-paper: #0e1817; --color-surface: #142221; --color-mist: #1d2e2d; --color-line: #2b4140;
+  --color-sage: #6fc8cc; --color-sage-dark: #95d9dc; --color-sage-light: #143536; --color-on-primary: #062224;
+}
+:root[data-mode="dark"][data-theme="lavender"] {
+  --color-ink: #ebe5f5; --color-ink-soft: #aca1bf; --color-paper: #15121b; --color-surface: #1d1925; --color-mist: #272131; --color-line: #372f45;
+  --color-sage: #c3aee6; --color-sage-dark: #d6c7ef; --color-sage-light: #2f2445; --color-on-primary: #1d1030;
+}
+:root[data-mode="dark"][data-theme="kitten"] {
+  --color-ink: #f6e4ee; --color-ink-soft: #c4a3b6; --color-paper: #1a1219; --color-surface: #241924; --color-mist: #2f2130; --color-line: #44303f;
+  --color-sage: #f29ac0; --color-sage-dark: #f7b8d3; --color-sage-light: #3d2032; --color-on-primary: #2a0f1e;
+  --paw-pattern: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%22120%22 viewBox=%220 0 120 120%22%3E%3Cg fill=%22%23f29ac0%22 fill-opacity=%220.1%22%3E%3Cg transform=%22translate(28 30) rotate(-20)%22%3E%3Cellipse cx=%220%22 cy=%226%22 rx=%227%22 ry=%226%22/%3E%3Ccircle cx=%22-8%22 cy=%22-3%22 r=%223%22/%3E%3Ccircle cx=%22-3%22 cy=%22-8%22 r=%223%22/%3E%3Ccircle cx=%223%22 cy=%22-8%22 r=%223%22/%3E%3Ccircle cx=%228%22 cy=%22-3%22 r=%223%22/%3E%3C/g%3E%3Cg transform=%22translate(88 88) rotate(25)%22%3E%3Cellipse cx=%220%22 cy=%226%22 rx=%227%22 ry=%226%22/%3E%3Ccircle cx=%22-8%22 cy=%22-3%22 r=%223%22/%3E%3Ccircle cx=%22-3%22 cy=%22-8%22 r=%223%22/%3E%3Ccircle cx=%223%22 cy=%22-8%22 r=%223%22/%3E%3Ccircle cx=%228%22 cy=%22-3%22 r=%223%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* Documents (the invoice) are always black on white, whatever the theme. */
+.force-light {
+  --color-ink: #1e2b2f; --color-ink-soft: #55656a; --color-paper: #f6f8f7; --color-surface: #ffffff;
+  --color-mist: #e2e9e5; --color-line: #d3dcd8;
+  --font-sans: "Public Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-sans);
+  color: var(--color-ink);
+}
+
 @layer base {
-  html { font-family: var(--font-sans); color: var(--color-ink); background: var(--color-paper); }
-  body { font-size: 15px; line-height: 1.5; }
+  html { font-family: var(--font-sans); color: var(--color-ink); background-color: var(--color-paper); }
+  body { font-size: 15px; line-height: 1.5; background-image: var(--paw-pattern, none); background-attachment: fixed; }
   :focus-visible { outline: 2px solid var(--color-sage); outline-offset: 2px; }
-  h1 { font-size: 1.6rem; font-weight: 600; letter-spacing: -0.01em; }
-  h2 { font-size: 1.1rem; font-weight: 600; }
+  h1 { font-family: var(--font-display); font-size: 1.6rem; font-weight: 600; letter-spacing: -0.01em; }
+  h2 { font-family: var(--font-display); font-size: 1.1rem; font-weight: 600; }
 }
 
 @layer components {
   .amount { font-family: var(--font-serif); font-variant-numeric: tabular-nums lining-nums; }
-  .btn-primary { @apply inline-flex items-center gap-2 rounded-md px-3.5 py-2 text-sm font-medium transition-colors disabled:opacity-50 bg-sage text-white hover:bg-sage-dark; }
-  .btn-secondary { @apply inline-flex items-center gap-2 rounded-md px-3.5 py-2 text-sm font-medium transition-colors disabled:opacity-50 border border-line bg-white text-ink hover:bg-mist; }
+  .btn-primary { @apply inline-flex items-center gap-2 rounded-md px-3.5 py-2 text-sm font-medium transition-colors disabled:opacity-50 bg-sage text-on-primary hover:bg-sage-dark; }
+  .btn-secondary { @apply inline-flex items-center gap-2 rounded-md px-3.5 py-2 text-sm font-medium transition-colors disabled:opacity-50 border border-line bg-surface text-ink hover:bg-mist; }
   .btn-quiet { @apply inline-flex items-center gap-2 rounded-md px-3.5 py-2 text-sm font-medium transition-colors disabled:opacity-50 text-sage hover:bg-sage-light; }
-  .field { @apply block w-full rounded-md border border-line bg-white px-3 py-2 text-sm focus:border-sage focus:outline-none focus:ring-2 focus:ring-sage-light; }
+  .field { @apply block w-full rounded-md border border-line bg-surface px-3 py-2 text-sm text-ink focus:border-sage focus:outline-none focus:ring-2 focus:ring-sage-light; }
   .label { @apply mb-1 block text-sm font-medium text-ink-soft; }
   .table { @apply w-full text-sm; }
   .table th { @apply border-b border-line py-2 pr-4 text-left font-medium text-ink-soft; }
   .table td { @apply border-b border-mist py-2 pr-4 align-middle; }
-  .panel { @apply rounded-lg border border-line bg-white p-5; }
+  .panel { @apply rounded-lg border border-line bg-surface p-5; }
   .badge { @apply inline-block rounded px-2 py-0.5 text-xs font-medium; }
 }
+
+/* Cute extras that only exist in the kitten theme. */
+.kitten-only { display: none; }
+:root[data-theme="kitten"] .kitten-only { display: revert; }
+:root[data-theme="kitten"] .kitten-hide { display: none; }
+:root[data-theme="kitten"] .amount { font-family: var(--font-display); font-weight: 500; }
+:root[data-theme="kitten"] .nav-link[aria-current="page"]::after { content: " 🐾"; }
 
 @media print {
   .no-print { display: none !important; }

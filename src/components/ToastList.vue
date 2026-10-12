@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useToastStore } from '../stores/toast'
+import PawIcon from './kitten/PawIcon.vue'
 
 const toast = useToastStore()
 </script>
@@ -13,6 +14,7 @@ const toast = useToastStore()
       :class="t.kind === 'error' ? 'border-brick/30 bg-brick-light text-brick' : 'border-sage/30 bg-sage-light text-sage-dark'"
       :role="t.kind === 'error' ? 'alert' : 'status'"
     >
+      <PawIcon v-if="t.kind === 'success'" class="kitten-only mt-0.5 shrink-0" />
       <p class="flex-1">{{ t.message }}</p>
       <button class="opacity-70 hover:opacity-100" aria-label="Sluiten" @click="toast.dismiss(t.id)">✕</button>
     </div>

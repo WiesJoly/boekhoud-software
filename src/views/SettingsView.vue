@@ -2,6 +2,7 @@
 import { reactive, ref, watch } from 'vue'
 import AmountText from '../components/AmountText.vue'
 import AppModal from '../components/AppModal.vue'
+import AppearancePicker from '../components/AppearancePicker.vue'
 import DebtorForm from '../components/DebtorForm.vue'
 import EmptyState from '../components/EmptyState.vue'
 import MoneyInput from '../components/MoneyInput.vue'
@@ -162,6 +163,12 @@ function saveDebtor(data: Omit<Debtor, 'id'>) {
         </tbody>
       </table>
     </div>
+  </section>
+
+  <section class="panel mt-8">
+    <h2 class="mb-1">Weergave</h2>
+    <p class="mb-4 text-sm text-ink-soft">Geldt op dit toestel. Facturen worden altijd zwart op wit afgedrukt.</p>
+    <AppearancePicker />
   </section>
 
   <AppModal v-if="editingService" :title="editingService === 'new' ? 'Nieuwe dienst' : 'Dienst wijzigen'" @close="editingService = null">

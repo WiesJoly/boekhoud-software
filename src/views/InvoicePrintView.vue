@@ -23,7 +23,7 @@ const print = () => window.print()
 </script>
 
 <template>
-  <div class="min-h-screen bg-mist py-8 print:bg-white print:py-0">
+  <div class="force-light min-h-screen bg-mist py-8 print:bg-white print:py-0">
     <div class="no-print mx-auto mb-4 flex max-w-[210mm] justify-end gap-2 px-4">
       <button class="btn-primary" @click="print">Afdrukken of opslaan als pdf</button>
     </div>

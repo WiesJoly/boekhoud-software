@@ -89,7 +89,7 @@ const sum = (lines: { cents: number }[]) => lines.reduce((s, l) => s + l.cents, 
     <p v-else class="max-w-2xl text-sm">
       Je valt onder de vrijstellingsregeling voor kleine ondernemingen: je rekent geen btw aan en dient geen periodieke aangifte in. Vanaf 2026 dien je wel elk jaar een klantenlisting in, ook als die leeg is.
     </p>
-    <p v-if="profile !== 'exempt' || taxedTurnover(year, practice.invoices) > 0" class="mt-4 max-w-2xl rounded-md border border-line bg-white px-4 py-3 text-sm">
+    <p v-if="profile !== 'exempt' || taxedTurnover(year, practice.invoices) > 0" class="mt-4 max-w-2xl rounded-md border border-line bg-surface px-4 py-3 text-sm">
       {{ smallBusiness.explanation }}
     </p>
   </section>

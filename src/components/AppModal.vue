@@ -11,7 +11,7 @@ onMounted(() => dialog.value?.showModal())
 <template>
   <dialog
     ref="dialog"
-    class="m-auto w-[calc(100vw-2rem)] rounded-lg border border-line bg-white p-0 text-ink backdrop:bg-ink/40"
+    class="m-auto w-[calc(100vw-2rem)] rounded-lg border border-line bg-surface p-0 text-ink backdrop:bg-black/50"
     :class="wide ? 'max-w-4xl' : 'max-w-lg'"
     @close="emit('close')"
     @cancel.prevent="emit('close')"

@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import AmountText from '../components/AmountText.vue'
+import PawIcon from '../components/kitten/PawIcon.vue'
 import { profitAndLoss, revenueSplit } from '../domain/annualReport'
 import { outstandingCents } from '../domain/invoices'
 import { buildTasks } from '../domain/tasks'
@@ -50,7 +51,7 @@ const tasks = computed(() =>
 
 <template>
   <section class="mb-10">
-    <p class="text-ink-soft">Beschikbaar om uit te geven</p>
+    <p class="flex items-center gap-2 text-ink-soft"><PawIcon class="kitten-only text-sage" /> Beschikbaar om uit te geven</p>
     <p class="amount mt-1 text-5xl leading-tight md:text-6xl" :class="available < 0 ? 'text-brick' : 'text-ink'">
       <AmountText :cents="available" />
     </p>
@@ -108,7 +109,7 @@ const tasks = computed(() =>
 
     <section>
       <h2 class="mb-3">Deze week</h2>
-      <ul v-if="tasks.length" class="divide-y divide-mist rounded-lg border border-line bg-white">
+      <ul v-if="tasks.length" class="divide-y divide-mist rounded-lg border border-line bg-surface">
         <li v-for="t in tasks" :key="t.id">
           <RouterLink :to="{ name: t.route }" class="flex items-center justify-between px-4 py-3 hover:bg-mist">
             <span>{{ t.label }}</span>
@@ -116,7 +117,7 @@ const tasks = computed(() =>
           </RouterLink>
         </li>
       </ul>
-      <p v-else class="rounded-lg border border-line bg-white px-4 py-6 text-ink-soft">
+      <p v-else class="rounded-lg border border-line bg-surface px-4 py-6 text-ink-soft">
         Niets te doen. Importeer je nieuwste uittreksel bij Bank om bij te blijven.
       </p>
     </section>

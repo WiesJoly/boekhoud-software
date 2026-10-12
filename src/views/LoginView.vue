@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import CatFace from '../components/kitten/CatFace.vue'
+import PawIcon from '../components/kitten/PawIcon.vue'
 import { authErrorMessage, useAuthStore } from '../stores/auth'
 
 const authStore = useAuthStore()
@@ -28,11 +30,14 @@ async function submit() {
 
 <template>
   <div class="grid min-h-screen md:grid-cols-[1fr_minmax(0,28rem)]">
-    <section class="hidden flex-col justify-end bg-sage p-12 text-white md:flex">
+    <section class="relative hidden flex-col justify-end overflow-hidden bg-sage p-12 text-on-primary md:flex">
+      <div class="kitten-only absolute top-12 right-12 rotate-6 text-[9rem] leading-none drop-shadow-sm"><CatFace /></div>
+      <div class="kitten-only absolute top-56 left-16 -rotate-12 text-3xl opacity-40"><PawIcon /></div>
+      <div class="kitten-only absolute top-72 left-32 rotate-12 text-2xl opacity-30"><PawIcon /></div>
       <p class="amount max-w-md text-4xl leading-tight">
         Wat binnenkomt, wat openstaat, en wat van de Belastingdienst is.
       </p>
-      <p class="mt-4 max-w-md text-sage-light">
+      <p class="mt-4 max-w-md opacity-80">
         Boekhouding voor vrijgevestigde psychologen. Geen dossiers, geen diagnoses: alleen wat financieel nodig is.
       </p>
     </section>
