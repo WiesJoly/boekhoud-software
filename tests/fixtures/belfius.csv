@@ -1,0 +1,6 @@
+Rekening;BE01 0000 0000 0000
+Van datum;01/02/2026
+
+Rekening;Boekingsdatum;Rekeninguittrekselnummer;Transactienummer;Rekening tegenpartij;Naam tegenpartij bevat;Straat en nummer;Postcode en plaats;Transactie;Valutadatum;Bedrag;Devies;BIC;Landcode;Mededelingen
+BE01;03/02/2026;1;1;BE22 0000;A. Peeters;;;Overschrijving;03/02/2026;95,00;EUR;;BE;+++202/6000/00697+++
+BE01;04/02/2026;1;2;;Bol.com;;;Betaling;04/02/2026;-12,50;EUR;;BE;Bestelling 123
