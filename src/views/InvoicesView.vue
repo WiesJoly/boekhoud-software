@@ -104,7 +104,7 @@ const TABS = [
       <tbody>
         <tr v-for="{ invoice, outstanding } in rows" :key="invoice.id">
           <td class="font-medium">{{ invoice.number }}<span v-if="invoice.kind === 'credit'" class="ml-2 badge bg-mist">creditnota</span></td>
-          <td class="text-ink-soft">{{ formatDate(invoice.date) }}</td>
+          <td class="whitespace-nowrap text-ink-soft">{{ formatDate(invoice.date) }}</td>
           <td>{{ practice.debtorById.get(invoice.debtorId)?.displayName ?? '—' }}</td>
           <td class="text-right"><AmountText :cents="invoice.totalCents" /></td>
           <td class="text-right"><AmountText v-if="invoice.kind === 'invoice'" :cents="outstanding" :muted="outstanding === 0" /></td>
