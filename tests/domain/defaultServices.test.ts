@@ -10,11 +10,12 @@ test('every default service has a VAT code and an existing revenue account', () 
   }
 })
 
-test('coaching, training and reports are taxed; care is exempt', () => {
+test('coaching, training and reports are taxed; care is exempt; cancellation is outside VAT', () => {
   const byName = (n: string) => DEFAULT_SERVICES.find((s) => s.name.startsWith(n))!
   expect(byName('Coaching').vatCode).toBe('standard21')
   expect(byName('Training').vatCode).toBe('standard21')
-  expect(byName('Deskundigenrapport').vatCode).toBe('standard21')
-  expect(byName('Consult').vatCode).toBe('exempt')
-  expect(byName('Consult').isCare).toBe(true)
+  expect(byName('Deskundigenverslag').vatCode).toBe('standard21')
+  expect(byName('Sessie eerstelijnspsychologische zorg')).toMatchObject({ vatCode: 'exempt', isCare: true, revenueAccount: 'omzet-riziv' })
+  expect(byName('Psychotherapie').vatCode).toBe('exempt')
+  expect(byName('Annuleringsvergoeding').vatCode).toBe('outside')
 })

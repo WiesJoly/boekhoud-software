@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { FISCAL_DEFAULTS_2026 } from '../../src/domain/fiscal'
-import { korSignal, quarterOf, taxedTurnover, vatReturn } from '../../src/domain/vatReturn'
+import { quarterOf, smallBusinessSignal, taxedTurnover, vatReturn } from '../../src/domain/vatReturn'
 import type { Expense, Invoice, InvoiceLine } from '../../src/domain/types'
 
 const line = (unitCents: number, vatCode: InvoiceLine['vatCode']): InvoiceLine => ({ serviceId: 's', description: '', date: '', qty: 1, unitCents, vatCode })
@@ -18,24 +18,27 @@ describe('vatReturn', () => {
     expect(quarterOf('2026-05-31')).toEqual({ year: 2026, quarter: 2 })
     expect(quarterOf('2026-12-31')).toEqual({ year: 2026, quarter: 4 })
   })
-  test('Q1 boxes', () => {
+  test('Q1 roosters', () => {
     expect(vatReturn(2026, 1, invoices, [exp('2026-01-15', 500), exp('2026-04-15', 999)])).toEqual({
-      box1aNetCents: 10000, box1aVatCents: 2100, box1eNetCents: 9500, box5bCents: 500, payableCents: 1600,
+      grid00Cents: 9500, grid03Cents: 10000, grid54Cents: 2100, grid59Cents: 500, grid71Cents: 1600, grid72Cents: 0,
     })
   })
-  test('credit invoice in the quarter reduces 1a', () => {
+  test('more deductible than due gives rooster 72', () => {
+    expect(vatReturn(2026, 1, [], [exp('2026-01-15', 500)])).toMatchObject({ grid71Cents: 0, grid72Cents: 500 })
+  })
+  test('credit note in the quarter reduces 03 and 54', () => {
     const credit = inv('cr', '2026-03-01', [{ ...line(10000, 'standard21'), qty: -1 }], 'credit')
-    expect(vatReturn(2026, 1, [...invoices, credit], []).box1aVatCents).toBe(0)
+    expect(vatReturn(2026, 1, [...invoices, credit], [])).toMatchObject({ grid03Cents: 0, grid54Cents: 0 })
   })
 })
 
-describe('KOR', () => {
-  test('taxed turnover excludes exempt care', () => {
+describe('vrijstellingsregeling kleine ondernemingen', () => {
+  test('taxed turnover excludes art. 44 care', () => {
     expect(taxedTurnover(2026, invoices)).toBe(60000)
   })
-  test('signal below threshold', () => {
-    expect(korSignal(1500000, FISCAL_DEFAULTS_2026).eligible).toBe(true)
-    expect(korSignal(2500000, FISCAL_DEFAULTS_2026).eligible).toBe(false)
-    expect(korSignal(1500000, FISCAL_DEFAULTS_2026).explanation).toContain('vrijgestelde zorg')
+  test('signal below the € 25.000 threshold', () => {
+    expect(smallBusinessSignal(1500000, FISCAL_DEFAULTS_2026).eligible).toBe(true)
+    expect(smallBusinessSignal(2500000, FISCAL_DEFAULTS_2026).eligible).toBe(false)
+    expect(smallBusinessSignal(1500000, FISCAL_DEFAULTS_2026).explanation).toContain('artikel 44')
   })
 })

@@ -24,8 +24,8 @@ export interface ReportLine {
 }
 
 const DEBTOR_ACCOUNT: Record<DebtorType, string> = {
-  insurer: 'debiteuren-verzekeraars',
-  municipality: 'debiteuren-gemeenten',
+  mutuality: 'debiteuren-ziekenfondsen',
+  network: 'debiteuren-netwerken',
   client: 'debiteuren-clienten',
   organisation: 'debiteuren-overig',
 }
@@ -38,11 +38,11 @@ const consultRevenue = (consults: Consult[]) => consults.filter((c) => c.status 
 const consultAmount = (c: Consult) => (c.status === 'paid' ? c.paidCents : c.amountCents)
 
 function consultAccount(c: Consult, debtors: Debtor[]): string {
-  if (c.status === 'registered') return 'nog-te-declareren'
+  if (c.status === 'registered') return 'nog-te-factureren'
   const type = debtors.find((d) => d.id === c.debtorId)?.type
-  if (type === 'municipality') return 'omzet-jeugdwet'
-  if (type === 'insurer') return 'omzet-zorg-verzekeraar'
-  return 'omzet-zorg-client'
+  if (type === 'network') return 'omzet-netwerk'
+  if (type === 'mutuality') return 'omzet-riziv'
+  return 'omzet-zelfbetalers'
 }
 
 const assetCost = (e: Expense) => e.amountInclCents - e.deductibleVatCents
@@ -116,14 +116,17 @@ export function balanceSheet(input: ReportInput): { assets: ReportLine[]; liabil
   }
   for (const c of consultRevenue(input.consults).filter((c) => c.date <= end)) {
     if (c.status === 'declared') {
-      const type = input.debtors.find((d) => d.id === c.debtorId)?.type ?? 'insurer'
+      const type = input.debtors.find((d) => d.id === c.debtorId)?.type ?? 'mutuality'
       assets.push([DEBTOR_ACCOUNT[type], c.amountCents])
-    } else if (c.status === 'registered') assets.push(['nog-te-declareren', c.amountCents])
+    } else if (c.status === 'registered') assets.push(['nog-te-factureren', c.amountCents])
   }
 
-  if (settings.vatProfile !== 'exempt') {
-    const vat = ([1, 2, 3, 4] as const).reduce((s, q) => s + vatReturn(year, q, input.invoices, input.expenses).payableCents, 0)
-    if (vat >= 0) liabilities.push(['btw-af-te-dragen', vat])
+  if (settings.vatProfile === 'mixed' || settings.vatProfile === 'taxed') {
+    const vat = ([1, 2, 3, 4] as const).reduce((s, q) => {
+      const r = vatReturn(year, q, input.invoices, input.expenses)
+      return s + r.grid71Cents - r.grid72Cents
+    }, 0)
+    if (vat >= 0) liabilities.push(['btw-te-betalen', vat])
     else assets.push(['btw-te-vorderen', -vat])
   }
 
@@ -154,12 +157,12 @@ export function exportRows(input: ReportInput): string[][] {
   for (const invoice of input.invoices.filter((i) => inYear(i.date, year))) {
     for (const line of invoice.lines) {
       const account = input.services.find((s) => s.id === line.serviceId)?.revenueAccount ?? 'omzet-overig'
-      const kind = invoice.kind === 'credit' ? 'creditfactuur' : 'factuur'
-      rows.push([invoice.date, kind, accountName(account), debtorName(invoice.debtorId), `${kind === 'factuur' ? 'Factuur' : 'Creditfactuur'} ${invoice.number}`, decimal(lineNet(line))])
+      const kind = invoice.kind === 'credit' ? 'creditnota' : 'factuur'
+      rows.push([invoice.date, kind, accountName(account), debtorName(invoice.debtorId), `${kind === 'factuur' ? 'Factuur' : 'Creditnota'} ${invoice.number}`, decimal(lineNet(line))])
     }
   }
   for (const c of consultRevenue(input.consults).filter((c) => inYear(c.date, year))) {
-    rows.push([c.date, 'consult', accountName(consultAccount(c, input.debtors)), debtorName(c.debtorId), 'Consult', decimal(consultAmount(c))])
+    rows.push([c.date, 'sessie', accountName(consultAccount(c, input.debtors)), debtorName(c.debtorId), 'Sessie', decimal(consultAmount(c))])
   }
   for (const e of input.expenses.filter((e) => inYear(e.date, year))) {
     const category = categoryOf(e.category)

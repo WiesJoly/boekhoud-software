@@ -14,30 +14,35 @@ const inQuarter = (date: string, year: number, quarter: Quarter) => {
   return q.year === year && q.quarter === quarter
 }
 
+/** Periodieke btw-aangifte (roosters). Rooster 00 = vrijgestelde handelingen (art. 44) van een gemengde btw-plichtige. */
 export interface VatReturn {
-  box1aNetCents: number
-  box1aVatCents: number
-  box1eNetCents: number
-  box5bCents: number
-  payableCents: number
+  grid00Cents: number
+  grid03Cents: number
+  grid54Cents: number
+  grid59Cents: number
+  grid71Cents: number
+  grid72Cents: number
 }
 
 export function vatReturn(year: number, quarter: Quarter, invoices: Invoice[], expenses: Expense[]): VatReturn {
-  let box1aNet = 0
-  let box1aVat = 0
-  let box1e = 0
+  let grid00 = 0
+  let grid03 = 0
+  let grid54 = 0
   for (const invoice of invoices.filter((i) => inQuarter(i.date, year, quarter))) {
     for (const line of invoice.lines) {
       const net = Math.round(line.qty * line.unitCents)
-      if (line.vatCode === 'standard21') { box1aNet += net; box1aVat += lineVat(net, 'standard21') }
-      else if (line.vatCode === 'exempt') box1e += net
+      if (line.vatCode === 'standard21') { grid03 += net; grid54 += lineVat(net, 'standard21') }
+      else if (line.vatCode === 'exempt') grid00 += net
     }
   }
-  const box5b = expenses.filter((e) => inQuarter(e.date, year, quarter)).reduce((s, e) => s + e.deductibleVatCents, 0)
-  return { box1aNetCents: box1aNet, box1aVatCents: box1aVat, box1eNetCents: box1e, box5bCents: box5b, payableCents: box1aVat - box5b }
+  const grid59 = expenses.filter((e) => inQuarter(e.date, year, quarter)).reduce((s, e) => s + e.deductibleVatCents, 0)
+  return {
+    grid00Cents: grid00, grid03Cents: grid03, grid54Cents: grid54, grid59Cents: grid59,
+    grid71Cents: Math.max(0, grid54 - grid59), grid72Cents: Math.max(0, grid59 - grid54),
+  }
 }
 
-/** Net turnover from taxed services in a year (exempt care and out-of-scope income excluded). */
+/** Net turnover from taxed services in a year (art. 44-vrijgestelde zorg and out-of-scope income excluded). */
 export function taxedTurnover(year: number, invoices: Invoice[]): number {
   const prefix = `${year}-`
   return invoices
@@ -47,11 +52,13 @@ export function taxedTurnover(year: number, invoices: Invoice[]): number {
     .reduce((s, l) => s + Math.round(l.qty * l.unitCents), 0)
 }
 
-export function korSignal(taxedTurnoverYearCents: number, params: FiscalParameters): { eligible: boolean; explanation: string } {
-  const eligible = taxedTurnoverYearCents < params.korThresholdCents
-  const threshold = formatCents(params.korThresholdCents)
+/** Vrijstellingsregeling kleine ondernemingen (art. 56bis WBTW). */
+export function smallBusinessSignal(taxedTurnoverYearCents: number, params: FiscalParameters): { eligible: boolean; explanation: string } {
+  const eligible = taxedTurnoverYearCents < params.smallBusinessThresholdCents
+  const threshold = formatCents(params.smallBusinessThresholdCents)
+  const turnover = formatCents(taxedTurnoverYearCents)
   const explanation = eligible
-    ? `Je belaste omzet (${formatCents(taxedTurnoverYearCents)}) blijft onder de KOR-drempel van ${threshold}. Je kunt kiezen voor de kleineondernemersregeling. In principe telt vrijgestelde zorg niet mee voor de drempel; bespreek de keuze met je fiscalist.`
-    : `Je belaste omzet (${formatCents(taxedTurnoverYearCents)}) ligt boven de KOR-drempel van ${threshold}; de kleineondernemersregeling is niet mogelijk. Vrijgestelde zorg is hierbij niet meegeteld.`
+    ? `Je belaste omzet (${turnover}) blijft onder de drempel van ${threshold}. Je kunt kiezen voor de vrijstellingsregeling voor kleine ondernemingen: geen btw aanrekenen en geen btw-aangifte, maar ook geen aftrek. Omzet uit zorg vrijgesteld door artikel 44 telt in principe niet mee. Bespreek de keuze met je boekhouder.`
+    : `Je belaste omzet (${turnover}) ligt boven de drempel van ${threshold}; de vrijstellingsregeling voor kleine ondernemingen is niet mogelijk. Omzet vrijgesteld door artikel 44 is niet meegeteld.`
   return { eligible, explanation }
 }

@@ -8,6 +8,11 @@ describe('accounts', () => {
     expect(ACCOUNTS.length).toBeGreaterThanOrEqual(40)
     expect(new Set(ACCOUNTS.map((a) => a.id)).size).toBe(ACCOUNTS.length)
   })
+  test('Belgian debtor accounts exist', () => {
+    for (const id of ['debiteuren-ziekenfondsen', 'debiteuren-netwerken', 'nog-te-factureren', 'omzet-riziv', 'omzet-annulering']) {
+      expect(ACCOUNTS.map((a) => a.id)).toContain(id)
+    }
+  })
   test('every category books to an existing cost account', () => {
     expect(CATEGORIES).toHaveLength(15)
     for (const c of CATEGORIES) expect(ACCOUNTS.find((a) => a.id === c.account)?.group).toBe('costs')
@@ -18,6 +23,8 @@ describe('supplier rules', () => {
   test('supplierKey normalises', () => {
     expect(supplierKey(' Zoom  B.V. ')).toBe('zoom')
     expect(supplierKey('Bol.com BV')).toBe('bol.com')
+    expect(supplierKey('Proximus NV')).toBe('proximus')
+    expect(supplierKey('Acme SRL')).toBe('acme')
     expect(supplierKey('Praktijk  Noord')).toBe('praktijk noord')
   })
   test('suggestCategory uses the normalised key', () => {
