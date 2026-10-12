@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppIcon from '../components/AppIcon.vue'
 import { computed, ref } from 'vue'
 import AmountText from '../components/AmountText.vue'
 import AppModal from '../components/AppModal.vue'
@@ -111,7 +112,7 @@ const debtorName = (id: string) => practice.debtorById.get(id)?.displayName ?? '
     intro="Sessies uit je EPD of het platform eerstelijnspsychologische zorg, met hun terugbetalingsstatus. Importeer het CSV-bestand; dezelfde sessie opnieuw importeren werkt haar bij."
   >
     <label class="btn-primary cursor-pointer">
-      CSV importeren
+      <AppIcon name="upload" />CSV importeren
       <input type="file" accept=".csv,text/csv" class="sr-only" @change="onFile" />
     </label>
   </PageHeader>

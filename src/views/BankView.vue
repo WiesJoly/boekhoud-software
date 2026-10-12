@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppIcon from '../components/AppIcon.vue'
 import { computed, ref } from 'vue'
 import AmountText from '../components/AmountText.vue'
 import AppModal from '../components/AppModal.vue'
@@ -110,7 +111,7 @@ const suggestionOf = (id: string): MatchSuggestion | null => suggestions.value.g
 <template>
   <PageHeader title="Bank" intro="Importeer je rekeninguittreksels (CODA, MT940 of CSV van je bank) en bevestig de voorgestelde koppelingen.">
     <label class="btn-primary cursor-pointer">
-      Uittreksel importeren
+      <AppIcon name="upload" />Uittreksel importeren
       <input type="file" accept=".cod,.coda,.txt,.csv,.sta,.940,.mt940" class="sr-only" @change="onFile" />
     </label>
   </PageHeader>

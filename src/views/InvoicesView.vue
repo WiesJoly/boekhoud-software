@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppIcon from '../components/AppIcon.vue'
 import { computed, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import AmountText from '../components/AmountText.vue'
@@ -77,7 +78,7 @@ const TABS = [
 
 <template>
   <PageHeader title="Facturen" intro="Facturen aan cliënten en organisaties. Een factuur verwijder je nooit; je maakt een creditnota.">
-    <button class="btn-primary" :disabled="!practice.settings" @click="creating = true">Nieuwe factuur</button>
+    <button class="btn-primary" :disabled="!practice.settings" @click="creating = true"><AppIcon name="plus" />Nieuwe factuur</button>
   </PageHeader>
 
   <div class="mb-4 flex flex-wrap gap-1" role="tablist">
@@ -113,7 +114,7 @@ const TABS = [
             <span v-if="reminders.get(invoice.id)" class="ml-1 badge bg-brick-light text-brick">{{ reminders.get(invoice.id) }}e herinnering</span>
           </td>
           <td class="whitespace-nowrap text-right">
-            <RouterLink class="btn-quiet" :to="{ name: 'invoice-print', params: { id: invoice.id } }" target="_blank">Afdrukken</RouterLink>
+            <RouterLink class="btn-quiet" :to="{ name: 'invoice-print', params: { id: invoice.id } }" target="_blank"><AppIcon name="print" />Afdrukken</RouterLink>
             <template v-if="invoice.kind === 'invoice' && invoice.status === 'open'">
               <button v-if="reminders.get(invoice.id)" class="btn-quiet" @click="copyReminder(invoice, reminders.get(invoice.id)!)">Herinnering kopiëren</button>
               <button class="btn-quiet" @click="markPaid(invoice)">Betaald</button>

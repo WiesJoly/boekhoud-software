@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppIcon from '../components/AppIcon.vue'
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import AmountText from '../components/AmountText.vue'
@@ -25,7 +26,7 @@ const print = () => window.print()
 <template>
   <div class="force-light min-h-screen bg-mist py-8 print:bg-white print:py-0">
     <div class="no-print mx-auto mb-4 flex max-w-[210mm] justify-end gap-2 px-4">
-      <button class="btn-primary" @click="print">Afdrukken of opslaan als pdf</button>
+      <button class="btn-primary" @click="print"><AppIcon name="print" />Afdrukken of opslaan als pdf</button>
     </div>
 
     <p v-if="!invoice" class="mx-auto max-w-[210mm] px-4 text-ink-soft">Factuur laden…</p>

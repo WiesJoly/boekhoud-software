@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppIcon from '../components/AppIcon.vue'
 import { reactive, ref, watch } from 'vue'
 import AmountText from '../components/AmountText.vue'
 import AppModal from '../components/AppModal.vue'
@@ -118,7 +119,7 @@ function saveDebtor(data: Omit<Debtor, 'id'>) {
   <section class="mb-8">
     <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
       <h2>Diensten</h2>
-      <button class="btn-secondary" :disabled="!practice.settings" @click="editingService = 'new'">Dienst toevoegen</button>
+      <button class="btn-secondary" :disabled="!practice.settings" @click="editingService = 'new'"><AppIcon name="plus" />Dienst toevoegen</button>
     </div>
     <EmptyState v-if="!practice.services.length">
       <p class="mb-3">Nog geen diensten. Begin met de meest voorkomende diensten van een psychologenpraktijk.</p>
@@ -147,7 +148,7 @@ function saveDebtor(data: Omit<Debtor, 'id'>) {
   <section>
     <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
       <h2>Debiteuren</h2>
-      <button class="btn-secondary" :disabled="!practice.settings" @click="editingDebtor = 'new'">Debiteur toevoegen</button>
+      <button class="btn-secondary" :disabled="!practice.settings" @click="editingDebtor = 'new'"><AppIcon name="plus" />Debiteur toevoegen</button>
     </div>
     <EmptyState v-if="!practice.debtors.length">Nog geen debiteuren. Ziekenfondsen worden automatisch aangemaakt bij het importeren van sessies.</EmptyState>
     <div v-else class="overflow-x-auto">

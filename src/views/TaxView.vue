@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppIcon from '../components/AppIcon.vue'
 import { computed, ref, watch } from 'vue'
 import AmountText from '../components/AmountText.vue'
 import PageHeader from '../components/PageHeader.vue'
@@ -125,8 +126,8 @@ const sum = (lines: { cents: number }[]) => lines.reduce((s, l) => s + l.cents, 
     <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
       <h2>Jaarcijfers {{ year }}</h2>
       <div class="no-print flex gap-2">
-        <button class="btn-secondary" @click="exportCsv">Exporteren voor boekhouder (CSV)</button>
-        <button class="btn-secondary" @click="print">Afdrukken</button>
+        <button class="btn-secondary" @click="exportCsv"><AppIcon name="download" />Exporteren voor boekhouder (CSV)</button>
+        <button class="btn-secondary" @click="print"><AppIcon name="print" />Afdrukken</button>
       </div>
     </div>
     <p class="mb-4 max-w-2xl text-sm text-ink-soft">De export bevat cliëntnummers en bedragen, geen namen of pseudocodes.</p>

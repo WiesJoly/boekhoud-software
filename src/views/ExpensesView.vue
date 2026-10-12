@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppIcon from '../components/AppIcon.vue'
 import { computed, ref } from 'vue'
 import AmountText from '../components/AmountText.vue'
 import AppModal from '../components/AppModal.vue'
@@ -42,7 +43,7 @@ async function openReceipt(path: string) {
 
 <template>
   <PageHeader title="Uitgaven" intro="Bonnen en aankoopfacturen. De categorie wordt onthouden per leverancier.">
-    <button v-if="tab === 'expenses'" class="btn-primary" @click="adding = true">Uitgave toevoegen</button>
+    <button v-if="tab === 'expenses'" class="btn-primary" @click="adding = true"><AppIcon name="plus" />Uitgave toevoegen</button>
   </PageHeader>
 
   <div class="mb-4 flex gap-1" role="tablist">

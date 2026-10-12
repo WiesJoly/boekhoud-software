@@ -5,13 +5,14 @@ import { connectStorageEmulator, getStorage } from 'firebase/storage'
 
 const env = import.meta.env
 const useEmulators = env.VITE_USE_EMULATORS === 'true'
-const projectId = env.VITE_FIREBASE_PROJECT_ID || 'demo-boekhouding'
+// The emulators run a single demo project; never point them at the real project's id.
+const projectId = useEmulators ? 'demo-boekhouding' : env.VITE_FIREBASE_PROJECT_ID || 'demo-boekhouding'
 
 const app = initializeApp({
   apiKey: env.VITE_FIREBASE_API_KEY || 'demo-key',
-  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN || `${projectId}.firebaseapp.com`,
+  authDomain: useEmulators ? `${projectId}.firebaseapp.com` : env.VITE_FIREBASE_AUTH_DOMAIN || `${projectId}.firebaseapp.com`,
   projectId,
-  storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET || `${projectId}.appspot.com`,
+  storageBucket: useEmulators ? `${projectId}.appspot.com` : env.VITE_FIREBASE_STORAGE_BUCKET || `${projectId}.appspot.com`,
   appId: env.VITE_FIREBASE_APP_ID || 'demo-app',
 })
 

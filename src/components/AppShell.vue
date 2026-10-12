@@ -1,18 +1,20 @@
 <script setup lang="ts">
+import AppIcon from './AppIcon.vue'
 import { RouterLink } from 'vue-router'
+import type { IconName } from '../icons'
 import CatFace from './kitten/CatFace.vue'
 
 defineProps<{ practiceName?: string }>()
 defineEmits<{ logout: [] }>()
 
-const nav = [
-  { to: { name: 'overview' }, label: 'Overzicht' },
-  { to: { name: 'consults' }, label: 'Sessies' },
-  { to: { name: 'invoices' }, label: 'Facturen' },
-  { to: { name: 'expenses' }, label: 'Uitgaven' },
-  { to: { name: 'bank' }, label: 'Bank' },
-  { to: { name: 'tax' }, label: 'Belasting' },
-  { to: { name: 'settings' }, label: 'Instellingen' },
+const nav: { to: { name: string }; label: string; icon: IconName }[] = [
+  { to: { name: 'overview' }, label: 'Overzicht', icon: 'overview' },
+  { to: { name: 'consults' }, label: 'Sessies', icon: 'sessions' },
+  { to: { name: 'invoices' }, label: 'Facturen', icon: 'invoices' },
+  { to: { name: 'expenses' }, label: 'Uitgaven', icon: 'expenses' },
+  { to: { name: 'bank' }, label: 'Bank', icon: 'bank' },
+  { to: { name: 'tax' }, label: 'Belasting', icon: 'tax' },
+  { to: { name: 'settings' }, label: 'Instellingen', icon: 'settings' },
 ]
 </script>
 
@@ -31,13 +33,13 @@ const nav = [
           v-for="item in nav"
           :key="item.label"
           :to="item.to"
-          class="nav-link whitespace-nowrap rounded-md px-3 py-2 text-sm text-ink-soft hover:bg-mist hover:text-ink"
+          class="nav-link flex items-center gap-2.5 whitespace-nowrap rounded-md px-3 py-2 text-sm text-ink-soft hover:bg-mist hover:text-ink"
           exact-active-class="bg-sage-light !text-sage-dark font-medium"
-        >{{ item.label }}</RouterLink>
-        <button class="whitespace-nowrap rounded-md px-3 py-2 text-sm text-ink-soft hover:bg-mist md:hidden" @click="$emit('logout')">Uitloggen</button>
+        ><AppIcon :name="item.icon" />{{ item.label }}</RouterLink>
+        <button class="flex items-center gap-2.5 whitespace-nowrap rounded-md px-3 py-2 text-sm text-ink-soft hover:bg-mist md:hidden" @click="$emit('logout')"><AppIcon name="logout" />Uitloggen</button>
       </nav>
       <div class="hidden px-3 md:absolute md:bottom-4 md:block">
-        <button class="btn-quiet" @click="$emit('logout')">Uitloggen</button>
+        <button class="btn-quiet" @click="$emit('logout')"><AppIcon name="logout" />Uitloggen</button>
       </div>
     </aside>
     <main class="w-full max-w-6xl px-4 py-8 md:px-10">
