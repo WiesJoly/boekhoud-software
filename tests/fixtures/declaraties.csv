@@ -1,0 +1,4 @@
+consult_id;datum;debiteur;prestatiecode;bedrag;status;afwijsreden;betaald
+EPD-1001;2026-01-05;CZ;CO0012;132,46;betaald;;132,46
+EPD-1002;12-01-2026;CZ;CO0012;132,46;afgewezen;Verwijzing ontbreekt;0
+EPD-1003;2026-01-19;VGZ;CO0045;98,10;gedeclareerd;;
