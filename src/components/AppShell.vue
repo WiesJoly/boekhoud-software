@@ -35,7 +35,7 @@ const nav = [
         <button class="btn-quiet" @click="$emit('logout')">Uitloggen</button>
       </div>
     </aside>
-    <main class="mx-auto w-full max-w-6xl px-4 py-8 md:px-10">
+    <main class="w-full max-w-6xl px-4 py-8 md:px-10">
       <slot />
     </main>
   </div>
