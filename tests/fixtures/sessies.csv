@@ -1,0 +1,4 @@
+sessie_id;datum;ziekenfonds;pseudocode;bedrag;status;reden;betaald
+ELP-1001;2026-01-05;CM;7980;78,59;betaald;;78,59
+ELP-1002;12-01-2026;CM;7980;78,59;geweigerd;Maximum aantal sessies bereikt;0
+ELP-1003;2026-01-19;Solidaris;7980;78,59;ingediend;;

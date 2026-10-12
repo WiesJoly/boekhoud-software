@@ -21,12 +21,12 @@ export function suggestMatch(tx: BankTransaction, ctx: MatchContext): MatchSugge
     const numbers = extractInvoiceNumbers(tx.description)
     const invoices = ctx.invoices.filter((i) => i.status === 'open' && i.kind === 'invoice' && numbers.includes(i.number))
     if (invoices.length) {
-      return { type: 'invoice', ids: invoices.map((i) => i.id), reason: `Factuurnummer ${invoices.map((i) => i.number).join(', ')} in omschrijving` }
+      return { type: 'invoice', ids: invoices.map((i) => i.id), reason: `Factuur ${invoices.map((i) => i.number).join(', ')} herkend in de mededeling` }
     }
 
     const counterparty = tx.counterparty.toLowerCase()
     const payer = ctx.debtors.find(
-      (d) => (d.type === 'insurer' || d.type === 'municipality') && d.displayName && counterparty.includes(d.displayName.toLowerCase()),
+      (d) => (d.type === 'mutuality' || d.type === 'network') && d.displayName && counterparty.includes(d.displayName.toLowerCase()),
     )
     if (payer) {
       const open = ctx.consults
@@ -37,7 +37,7 @@ export function suggestMatch(tx: BankTransaction, ctx: MatchContext): MatchSugge
       for (const c of open) {
         sum += c.paidCents
         ids.push(c.id)
-        if (sum === tx.amountCents) return { type: 'consults', ids, reason: `${ids.length} betaalde consulten van ${payer.displayName}` }
+        if (sum === tx.amountCents) return { type: 'consults', ids, reason: `${ids.length} betaalde sessies van ${payer.displayName}` }
         if (sum > tx.amountCents) break
       }
     }
