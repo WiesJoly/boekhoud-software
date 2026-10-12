@@ -9,3 +9,4 @@ firestore-debug.log
 ui-debug.log
 .superpowers
 .emulator-data
+.playwright-mcp

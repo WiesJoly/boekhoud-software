@@ -1,4 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from './stores/auth'
+import { usePracticeStore } from './stores/practice'
 
 export const router = createRouter({
   history: createWebHistory(),
@@ -12,5 +14,20 @@ export const router = createRouter({
     { path: '/bank', name: 'bank', component: () => import('./views/BankView.vue') },
     { path: '/belasting', name: 'tax', component: () => import('./views/TaxView.vue') },
     { path: '/instellingen', name: 'settings', component: () => import('./views/SettingsView.vue') },
+    { path: '/:pathMatch(.*)*', redirect: '/' },
   ],
+})
+
+router.beforeEach(async (to) => {
+  const authStore = useAuthStore()
+  await authStore.ready
+  if (!authStore.user) return to.meta.public ? true : { name: 'login' }
+  if (to.name === 'login') return { name: 'overview' }
+
+  // A new account first fills in the practice details.
+  const practice = usePracticeStore()
+  practice.start(authStore.user.uid)
+  await practice.whenSettingsLoaded()
+  if (!practice.settings && to.name !== 'settings') return { name: 'settings' }
+  return true
 })

@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app'
 import { connectAuthEmulator, getAuth } from 'firebase/auth'
-import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore'
+import { connectFirestoreEmulator, initializeFirestore } from 'firebase/firestore'
 import { connectStorageEmulator, getStorage } from 'firebase/storage'
 
 const env = import.meta.env
@@ -16,7 +16,8 @@ const app = initializeApp({
 })
 
 export const auth = getAuth(app)
-export const db = getFirestore(app)
+// Optional fields are left undefined in domain objects; Firestore should simply omit them.
+export const db = initializeFirestore(app, { ignoreUndefinedProperties: true })
 export const storage = getStorage(app)
 
 if (useEmulators) {
